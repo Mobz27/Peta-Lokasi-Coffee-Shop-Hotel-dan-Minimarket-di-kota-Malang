@@ -1,0 +1,853 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Peta Lokasi Coffee Shop, Hotel, dan Minimarket di kota Malang</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
+    <style>
+        #map{
+            height: 100vh;
+            width: 100%;
+        }
+
+        .info {
+    padding: 6px 8px;
+    font: 14px/16px Arial, Helvetica, sans-serif;
+    background: white;
+    background: rgba(255,255,255,0.8);
+    box-shadow: 0 0 15px rgba(0,0,0,0.2);
+    border-radius: 5px;
+}
+.info h4 {
+    margin: 0 0 5px;
+    color: #777;
+}
+
+.legend {
+    line-height: 18px;
+    color: #555;
+}
+.legend i {
+    width: 18px;
+    height: 18px;
+    float: left;
+    margin-right: 8px;
+    opacity: 0.7;
+}
+
+
+    </style>
+
+</head>
+<body>
+    <h1>Peta Lokasi Coffee Shop, Hotel, dan Mini Market di kota Malang</h1>
+    <div id="map"></div>
+    <div id="mapid"></div>
+</body>
+</html>
+<script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+<script src="./data/line.js"></script>
+<script src="./data/point.js"></script>
+<script src="./data/polygon.js"></script>
+<script src="./data/kotamalangdata.js"></script>
+<script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
+<script src="./data/usstates.js"></script>
+<script>
+
+    /*===================================================
+                      OSM  LAYER               
+===================================================*/
+
+    var map = L.map('map').setView([-7.965, 112.613], 13);  // pusatkan di Malang
+var osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+});
+osm.addTo(map);
+
+/*===================================================
+                      MARKER               
+===================================================*/
+
+var customIcon = L.icon({
+    iconUrl: 'https://leafletjs.com/examples/custom-icons/leaf-green.png', // Ganti URL dengan gambar ikon berwarna lain jika perlu
+   iconSize:     [50, 95], // size of the icon
+    shadowSize:   [50, 64], // size of the shadow
+    iconAnchor:   [32, 94], // point of the icon which will correspond to marker's location
+    shadowAnchor: [10, 62],  // the same for the shadow
+    popupAnchor:  [-3, -86] // point from which the popup should open relative to the iconAnchor
+});
+
+var singleMarker = L.marker([-7.982433877065588,112.63087567291318], { icon: customIcon });
+singleMarker.addTo(map);
+var popup = singleMarker.bindPopup('Alun - Alun Kota Malang')
+popup.addTo(map);
+
+
+/*===================================================
+                     TILE LAYER               
+===================================================*/
+
+var CartoDB_DarkMatter = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+subdomains: 'abcd',
+	maxZoom: 19
+});
+CartoDB_DarkMatter.addTo(map);
+
+// Google Map Layer
+
+googleStreets = L.tileLayer('http://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}',{
+    maxZoom: 20,
+    subdomains:['mt0','mt1','mt2','mt3']
+ });
+ googleStreets.addTo(map);
+
+ // Satelite Layer
+googleSat = L.tileLayer('http://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}',{
+   maxZoom: 20,
+   subdomains:['mt0','mt1','mt2','mt3']
+ });
+googleSat.addTo(map);
+
+var Stamen_Watercolor = L.tileLayer('https://stamen-tiles-{s}.a.ssl.fastly.net/watercolor/{z}/{x}/{y}.{ext}', {
+ attribution: 'Map tiles by <a href="http://stamen.com">Stamen Design</a>, <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a> &mdash; Map data &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+subdomains: 'abcd',
+minZoom: 1,
+maxZoom: 16,
+ext: 'jpg'
+});
+Stamen_Watercolor.addTo(map);
+
+
+/*===================================================
+                      GEOJSON               
+===================================================*/
+
+var linedata = L.geoJSON(lineJSON).addTo(map);
+var kotamalangData = L.geoJSON(kotamalangdataa).addTo(map);
+var polygondata = L.geoJSON(polygonJSON,{
+    onEachFeature: function(feature,layer){
+        layer.bindPopup('<b>This is a </b>' + feature.properties.name)
+    },
+    style:{
+        fillColor: 'red',
+        fillOpacity:1,
+        color: 'green'
+    }
+}).addTo(map);
+
+/*===================================================
+                      LAYER CONTROL               
+===================================================*/
+
+var baseLayers = {
+    "Satellite":googleSat,
+    "Google Map":googleStreets,
+    "Water Color":Stamen_Watercolor,
+    "OpenStreetMap": osm,
+};
+
+var overlays = {
+    "Marker": singleMarker,
+    "LineData":linedata,
+    "PolygonData":polygondata
+};
+
+L.control.layers(baseLayers, overlays).addTo(map);
+
+
+/*===================================================
+                      SEARCH BUTTON               
+===================================================*/
+
+L.Control.geocoder().addTo(map);
+
+
+/*===================================================
+                      Choropleth Map               
+===================================================*/
+
+L.geoJSON(statesData).addTo(map);
+
+
+function getColor(d) {
+    return d > 1000 ? '#800026' :
+           d > 500  ? '#BD0026' :
+           d > 200  ? '#E31A1C' :
+           d > 100  ? '#FC4E2A' :
+           d > 50   ? '#FD8D3C' :
+           d > 20   ? '#FEB24C' :
+           d > 10   ? '#FED976' :
+                      '#FFEDA0';
+}
+
+function style(feature) {
+    return {
+        fillColor: getColor(feature.properties.density),
+        weight: 2,
+        opacity: 1,
+        color: 'white',
+        dashArray: '3',
+        fillOpacity: 0.7
+    };
+}
+
+L.geoJson(statesData, {style: style}).addTo(map);
+
+function highlightFeature(e) {
+    var layer = e.target;
+
+    layer.setStyle({
+        weight: 5,
+        color: '#666',
+        dashArray: '',
+        fillOpacity: 0.7
+    });
+
+    if (!L.Browser.ie && !L.Browser.opera && !L.Browser.edge) {
+        layer.bringToFront();
+    }
+
+    info.update(layer.feature.properties);
+}
+
+function resetHighlight(e) {
+    geojson.resetStyle(e.target);
+    info.update();
+}
+
+var geojson;
+// ... our listeners
+geojson = L.geoJson(statesData);
+
+function zoomToFeature(e) {
+    map.fitBounds(e.target.getBounds());
+}
+
+function onEachFeature(feature, layer) {
+    layer.on({
+        mouseover: highlightFeature,
+        mouseout: resetHighlight,
+        click: zoomToFeature
+    });
+}
+
+geojson = L.geoJson(statesData, {
+    style: style,
+    onEachFeature: onEachFeature
+}).addTo(map);
+
+var info = L.control();
+
+info.onAdd = function (map) {
+    this._div = L.DomUtil.create('div', 'info'); // buat div dengan kategori "info"
+    this.update();
+    return this._div;
+};
+
+// metode yang akan kita gunakan untuk memperbarui kontrol berdasarkan properti fitur yang diteruskan
+info.update = function (props) {
+    this._div.innerHTML = '<h4>US Population Density</h4>' +  (props ?
+        '<b>' + props.name + '</b><br />' + props.density + ' people / mi<sup>2</sup>'
+        : 'Hover over a state');
+};
+
+info.addTo(map);
+
+
+</script>
+<script>// Initialize the map (assuming you have a map instance already set up)
+    // Example: var map = L.map('map').setView([your_latitude, your_longitude], zoom_level);
+    
+    // Array of school data
+     var marker = L.marker([-7.971845168,112.6667585]).addTo(map)
+            .bindPopup('Cale coffe malang, Kategori : Coffee, Fasilitas : Wifi, Tempat Cas, Rating Gmaps : 4.6, Buka : 24 Jam, Pembayaran : Tunai dan Non Tunai, Parkir : Bayar, Harga Permalam : Tidak Ada, Bintang : Tidak Ada, Alamat : Jl. Danau Jonge No.h4 e 40, Kelurahan : Madyopuro, Kecamatan : Kedungkandang, Kota : Malang, Provinsi : Jawa Timur, Kode Pos : 65142')
+            .openPopup();
+        var marker = L.marker([-7.939513384,112.6308098]).addTo(map)
+            .bindPopup('Labore Coffe Eatery, Kategori : Coffee, Fasilitas : Wifi, Tempat Cas, Rating Gmaps : 4.5, Buka : Tidak, Pembayaran : Tunai dan Non Tunai, Parkir : Bayar, Harga Permalam : Tidak Ada, Bintang : Tidak Ada, Alamat : Jl. Soekarno Hatta No.25, Kelurahan : Mojolangu, Kecamatan : Lowokwaru, Kota : Malang, Provinsi : Jawa Timur, Kode Pos : 65142')
+            .openPopup();
+        var marker = L.marker([-7.940366165,112.6313993]).addTo(map)
+            .bindPopup('Amstirdam Coffe, Kategori : Coffee, Fasilitas : Wifi, Tempat Cas, Rating Gmaps : 4.7, Buka : 24 Jam, Pembayaran : Tunai dan Non Tunai, Parkir : Bayar, Harga Permalam : Tidak Ada, Bintang : Tidak Ada, Alamat : Jl. Ruko Soekarno Hatta Indah. D18, Kelurahan : Mojolangu, Kecamatan : Lowokwaru, Kota : Malang, Provinsi : Jawa Timur, Kode Pos : 65142')
+            .openPopup();
+        var marker = L.marker([-7.948132557,112.6383478]).addTo(map)
+            .bindPopup('Malbourne Coffee Co, Kategori : Coffee, Fasilitas : Wifi, Tempat Cas, Rating Gmaps : 4.7, Buka : 24 Jam, Pembayaran : Tunai dan Non Tunai, Parkir : Bayar, Harga Permalam : Tidak Ada, Bintang : Tidak Ada, Alamat : Jl. Bantaran No.2D, Kelurahan : Purwantoro, Kecamatan : Blimbing, Kota : Malang, Provinsi : Jawa Timur, Kode Pos : 65142')
+            .openPopup();
+        var marker = L.marker([-7.939820384,112.6237844]).addTo(map)
+            .bindPopup('Dialogi Space & Coffee, Kategori : Coffee, Fasilitas : Wifi, Tempat Cas, Rating Gmaps : 4.6, Buka : 24 Jam, Pembayaran : Tunai dan Non Tunai, Parkir : Gratis, Harga Permalam : Tidak Ada, Bintang : Tidak Ada, Alamat : Jl. Soekarno Hatta No.D-505, Kelurahan : Mojolangu, Kecamatan : Lowokwaru, Kota : Malang, Provinsi : Jawa Timur, Kode Pos : 65141')
+            .openPopup();
+        var marker = L.marker([-7.945908527,112.6248892]).addTo(map)
+            .bindPopup('Roketto Coffee & Co, Kategori : Coffee, Fasilitas : Wifi, Tempat Cas, Rating Gmaps : 4.5, Buka : 24 Jam, Pembayaran : Tunai dan Non Tunai, Parkir : Bayar, Harga Permalam : Tidak Ada, Bintang : Tidak Ada, Alamat : Jl. Kendalsari No.06, Kelurahan : Jatimulyo, Kecamatan : Lowokwaru, Kota : Malang, Provinsi : Jawa Timur, Kode Pos : 65141')
+            .openPopup();
+        var marker = L.marker([-7.942885047,112.6130128]).addTo(map)
+            .bindPopup('Ruang Rindu Coffee, Kategori : Coffee, Fasilitas : Wifi, Tempat Cas, Rating Gmaps : 4.5, Buka : 24 Jam, Pembayaran : Tunai dan Non Tunai, Parkir : Gratis, Harga Permalam : Tidak Ada, Bintang : Tidak Ada, Alamat : Jl. MT. Haryono No.17C, Kelurahan : Dinoyo, Kecamatan : Lowokwaru, Kota : Malang, Provinsi : Jawa Timur, Kode Pos : 65144')
+            .openPopup();
+        var marker = L.marker([-7.961447312,112.6233891]).addTo(map)
+            .bindPopup('Jokopi - Malang, Kategori : Coffee, Fasilitas : Wifi, Tempat Cas, Rating Gmaps : 4.6, Buka : 24 Jam, Pembayaran : Tunai dan Non Tunai, Parkir : Bayar, Harga Permalam : Tidak Ada, Bintang : Tidak Ada, Alamat : Jl. Jakarta No.26, Kelurahan : Penanggungan, Kecamatan : Klojen, Kota : Malang, Provinsi : Jawa Timur, Kode Pos : 65113')
+            .openPopup();
+        var marker = L.marker([-7.96100242,112.6211366]).addTo(map)
+            .bindPopup('Dekker Koffie, Kategori : Coffee, Fasilitas : Wifi, Tempat Cas, Rating Gmaps : 4.9, Buka : 24 Jam, Pembayaran : Tunai dan Non Tunai, Parkir : Gratis, Harga Permalam : Tidak Ada, Bintang : Tidak Ada, Alamat : Jl. Surakarta No.1, Kelurahan : Sumbersari, Kecamatan : Lowokwaru, Kota : Malang, Provinsi : Jawa Timur, Kode Pos : 65145')
+            .openPopup();
+        var marker = L.marker([-7.969028115,112.6200591]).addTo(map)
+            .bindPopup('The Grove Cafe Malang, Kategori : Coffee, Fasilitas : Wifi, Tempat Cas, Rating Gmaps : 4.7, Buka : 24 Jam, Pembayaran : Tunai dan Non Tunai, Parkir : Gratis, Harga Permalam : Tidak Ada, Bintang : Tidak Ada, Alamat : Jl. Wilis No.23, Kelurahan : Gading Kasri, Kecamatan : Klojen, Kota : Malang, Provinsi : Jawa Timur, Kode Pos : 65115')
+            .openPopup();
+        var marker = L.marker([-7.963395126,112.6258742]).addTo(map)
+            .bindPopup('Ada Apa Dengan Kopi, Kategori : Coffee, Fasilitas : Wifi, Tempat Cas, Rating Gmaps : 4.6, Buka : 24 Jam, Pembayaran : Tunai dan Non Tunai, Parkir : Gratis, Harga Permalam : Tidak Ada, Bintang : Tidak Ada, Alamat : Jl. Bandung No.28, Kelurahan : Penanggungan, Kecamatan : Klojen, Kota : Malang, Provinsi : Jawa Timur, Kode Pos : 65113')
+            .openPopup();
+        var marker = L.marker([-7.964987526,112.6200571]).addTo(map)
+            .bindPopup('Java Dancer Coffee Roaster, Kategori : Coffee, Fasilitas : Wifi, Tempat Cas, Rating Gmaps : 4.5, Buka : 24 Jam, Pembayaran : Tunai dan Non Tunai, Parkir : Gratis, Harga Permalam : Tidak Ada, Bintang : Tidak Ada, Alamat : Jl. Jakarta No.59, Kelurahan : Oro-oro Dowo, Kecamatan : Klojen, Kota : Malang, Provinsi : Jawa Timur, Kode Pos : 65112')
+            .openPopup();
+        var marker = L.marker([-7.9634765,112.6219069]).addTo(map)
+            .bindPopup('Soun Coffee & Resto, Kategori : Coffee, Fasilitas : Wifi, Tempat Cas, Rating Gmaps : 5, Buka : 24 Jam, Pembayaran : Tunai dan Non Tunai, Parkir : Gratis, Harga Permalam : Tidak Ada, Bintang : Tidak Ada, Alamat : Jl. Simpang Ijen, Kelurahan : Oro-oro Dowo, Kecamatan : Klojen, Kota : Malang, Provinsi : Jawa Timur, Kode Pos : 65119')
+            .openPopup();
+        var marker = L.marker([-7.963530847,112.6219496]).addTo(map)
+            .bindPopup('Hindia Koffie en Eaten, Kategori : Coffee, Fasilitas : Wifi, Tempat Cas, Rating Gmaps : 4.5, Buka : 24 Jam, Pembayaran : Tunai dan Non Tunai, Parkir : Gratis, Harga Permalam : Tidak Ada, Bintang : Tidak Ada, Alamat : Jl. Simpang Ijen No.7, Kelurahan : Oro-oro Dowo, Kecamatan : Klojen, Kota : Malang, Provinsi : Jawa Timur, Kode Pos : 65119')
+            .openPopup();
+        var marker = L.marker([-7.978479613,112.6176567]).addTo(map)
+            .bindPopup('Robucca, Kategori : Coffee, Fasilitas : Wifi, Tempat Cas, Rating Gmaps : 4.6, Buka : 24 Jam, Pembayaran : Tunai dan Non Tunai, Parkir : Gratis, Harga Permalam : Tidak Ada, Bintang : Tidak Ada, Alamat : Jl. Raya No.1A Blok.D Ijen Nirwana, Kelurahan : Bareng, Kecamatan : Klojen, Kota : Malang, Provinsi : Jawa Timur, Kode Pos : 65116')
+            .openPopup();
+        var marker = L.marker([-7.975517333,112.6274158]).addTo(map)
+            .bindPopup('Cofe Laila, Kategori : Coffee, Fasilitas : Wifi, Tempat Cas, Rating Gmaps : 4.6, Buka : 24 Jam, Pembayaran : Tunai dan Non Tunai, Parkir : Gratis, Harga Permalam : Tidak Ada, Bintang : Tidak Ada, Alamat : Jl. Arjuna No.36  Lai Lai Market, Kelurahan : Kauman, Kecamatan : Klojen, Kota : Malang, Provinsi : Jawa Timur, Kode Pos : 65119')
+            .openPopup();
+        var marker = L.marker([-7.975517333,112.6274158]).addTo(map)
+            .bindPopup('Lafayette Coffee & Eateryy, Kategori : Coffee, Fasilitas : Wifi, Tempat Cas, Rating Gmaps : 4.4, Buka : Tidak, Pembayaran : Tunai dan Non Tunai, Parkir : Gratis, Harga Permalam : Tidak Ada, Bintang : Tidak Ada, Alamat : Jl. Semeru No.2  RW.4, Kelurahan : Oro-oro Dowo, Kecamatan : Klojen, Kota : Malang, Provinsi : Jawa Timur, Kode Pos : 65119')
+            .openPopup();
+        var marker = L.marker([-7.98439452,112.6310515]).addTo(map)
+            .bindPopup('Kopituju, Kategori : Coffee, Fasilitas : Wifi, Tempat Cas, Rating Gmaps : 4.4, Buka : Tidak, Pembayaran : Tunai dan Non Tunai, Parkir : Bayar, Harga Permalam : Tidak Ada, Bintang : Tidak Ada, Alamat : Jl. Sutan Syahrir No.7, Kelurahan : Sukoharjo, Kecamatan : Klojen, Kota : Malang, Provinsi : Jawa Timur, Kode Pos : 65117')
+            .openPopup();
+        var marker = L.marker([-7.965480909,112.6259079]).addTo(map)
+            .bindPopup('Ijen KopiTiam, Kategori : Coffee, Fasilitas : Wifi, Tempat Cas, Rating Gmaps : 4.8, Buka : Tidak, Pembayaran : Tunai dan Non Tunai, Parkir : Bayar, Harga Permalam : Tidak Ada, Bintang : Tidak Ada, Alamat : Jl. Besar Ijen No.90-92, Kelurahan : Oro-oro Dowo, Kecamatan : Klojen, Kota : Malang, Provinsi : Jawa Timur, Kode Pos : 65119')
+            .openPopup();
+        var marker = L.marker([-7.94969872,112.6254544]).addTo(map)
+            .bindPopup('Warkofi Comboran Malang : alamat": "Jl. Sartono S.H No.52, Sukoharjo, Kec. Klojen, Kota Malang, Jawa Timur 65118')
+            .openPopup();
+        var marker = L.marker([-7.9603331, 112.6225092]).addTo(map)
+            .bindPopup('Sejenak Coffee, Kategori : Coffee, Fasilitas : Wifi, Tempat Cas, Rating Gmaps : 4.5, Buka : Tidak, Pembayaran : Tunai dan Non Tunai, Parkir : Bayar, Harga Permalam : Tidak Ada, Bintang : Tidak Ada, Alamat : Jl. Bunga Mondokaki No.30, Kelurahan : Jatimulyo, Kecamatan : Lowokwaru, Kota : Malang, Provinsi : Jawa Timur, Kode Pos : 65141')
+            .openPopup();
+        var marker = L.marker([-7.967750183,112.6272259]).addTo(map)
+            .bindPopup('Toko Kopi Jaya Ijen, Kategori : Coffee, Fasilitas : Wifi, Tempat Cas, Rating Gmaps : 4.6, Buka : Tidak, Pembayaran : Tunai dan Non Tunai, Parkir : Bayar, Harga Permalam : Tidak Ada, Bintang : Tidak Ada, Alamat : Jl. Buring No.53, Kelurahan : Oro-oro Dowo, Kecamatan : Klojen, Kota : Malang, Provinsi : Jawa Timur, Kode Pos : 65119')
+            .openPopup();
+        var marker = L.marker([-7.967750183,112.6272259]).addTo(map)
+            .bindPopup('Titik Koma Buring, Kategori : Coffee, Fasilitas : Wifi, Tempat Cas, Rating Gmaps : 4.6, Buka : Tidak, Pembayaran : Tunai dan Non Tunai, Parkir : Bayar, Harga Permalam : Tidak Ada, Bintang : Tidak Ada, Alamat : Jl. Buring No.52, Kelurahan : Oro-oro Dowo, Kecamatan : Klojen, Kota : Malang, Provinsi : Jawa Timur, Kode Pos : 65119')
+            .openPopup();
+        var marker = L.marker([-7.932825926,112.6519673]).addTo(map)
+            .bindPopup('Mahboen Coffee, Kategori : Coffee, Fasilitas : Wifi, Tempat Cas, Rating Gmaps : 4.6, Buka : Tidak, Pembayaran : Tunai dan Non Tunai, Parkir : Bayar, Harga Permalam : Tidak Ada, Bintang : Tidak Ada, Alamat : Jl. Simpang Panji Suroso No.136, Kelurahan : Arjosari, Kecamatan : Blimbing, Kota : Malang, Provinsi : Jawa Timur, Kode Pos : 65126')
+            .openPopup();
+        var marker = L.marker([-7.967929745,112.628882]).addTo(map)
+            .bindPopup('Katamichi Coffee, Kategori : Coffee, Fasilitas : Wifi, Tempat Cas, Rating Gmaps : 4.8, Buka : Tidak, Pembayaran : Tunai dan Non Tunai, Parkir : Bayar, Harga Permalam : Tidak Ada, Bintang : Tidak Ada, Alamat : Jl. Brigjend Slamet Riadi No.97C, Kelurahan : Oro-oro Dowo, Kecamatan : Klojen, Kota : Malang, Provinsi : Jawa Timur, Kode Pos : 65119')
+            .openPopup();
+        var marker = L.marker([-7.9570712,112.6433178]).addTo(map)
+            .bindPopup('8ozcs, Kategori : Coffee, Fasilitas : Wifi, Tempat Cas, Rating Gmaps : 4.5, Buka : Tidak, Pembayaran : Tunai dan Non Tunai, Parkir : Bayar, Harga Permalam : Tidak Ada, Bintang : Tidak Ada, Alamat : Jl. Citandui No.74, Kelurahan : Purwantoro, Kecamatan : Blimbing, Kota : Malang, Provinsi : Jawa Timur, Kode Pos : 65122')
+            .openPopup();
+        var marker = L.marker([-7.940149701,112.6377356]).addTo(map)
+            .bindPopup('Vosco Coffee, Kategori : Coffee, Fasilitas : Wifi, Tempat Cas, Rating Gmaps : 4.5, Buka : Tidak, Pembayaran : Tunai dan Non Tunai, Parkir : Bayar, Harga Permalam : Tidak Ada, Bintang : Tidak Ada, Alamat : Jl. Borobudur No.27A, Kelurahan : Mojolangu, Kecamatan : Lowokwaru, Kota : Malang, Provinsi : Jawa Timur, Kode Pos : 65142')
+            .openPopup();
+        var marker = L.marker([-7.937412238,112.6252329]).addTo(map)
+            .bindPopup('11:12 Sebelas Duabelas Coffee, Kategori : Coffee, Fasilitas : Wifi, Tempat Cas, Rating Gmaps : 4.6, Buka : Tidak, Pembayaran : Tunai dan Non Tunai, Parkir : Bayar, Harga Permalam : Tidak Ada, Bintang : Tidak Ada, Alamat : Jl. soekarno Hatta PTP II No.12, Kelurahan : Mojolangu, Kecamatan : Lowokwaru, Kota : Malang, Provinsi : Jawa Timur, Kode Pos : 65142')
+            .openPopup();
+        var marker = L.marker([-7.9676456,112.6161817]).addTo(map)
+            .bindPopup('Nakoa Cafe Bondowoso, Kategori : Coffee, Fasilitas : Wifi, Tempat Cas, Rating Gmaps : 4.8, Buka : Tidak, Pembayaran : Tunai dan Non Tunai, Parkir : Bayar, Harga Permalam : Tidak Ada, Bintang : Tidak Ada, Alamat : Jl. Bondowoso No.14, Kelurahan : Gading Kasri, Kecamatan : Klojen, Kota : Malang, Provinsi : Jawa Timur, Kode Pos : 65115')
+            .openPopup();
+        var marker = L.marker([-7.940696907,112.6233112]).addTo(map)
+            .bindPopup('Bureau Coffee & Dine, Kategori : Coffee, Fasilitas : Wifi, Tempat Cas, Rating Gmaps : 4.5, Buka : Tidak, Pembayaran : Tunai dan Non Tunai, Parkir : Bayar, Harga Permalam : Tidak Ada, Bintang : Tidak Ada, Alamat : Jl. Soekarno - Hatta No.509 Lt. 2 Sch Malang, Kelurahan : Mojolangu, Kecamatan : Lowokwaru, Kota : Malang, Provinsi : Jawa Timur, Kode Pos : 65142')
+            .openPopup();
+        var marker = L.marker([-7.963279986,112.624974]).addTo(map)
+            .bindPopup('Simetri Coffee Malang, Kategori : Coffee, Fasilitas : Wifi, Tempat Cas, Rating Gmaps : 4.6, Buka : 24 Jam, Pembayaran : Tunai dan Non Tunai, Parkir : Bayar, Harga Permalam : Tidak Ada, Bintang : Tidak Ada, Alamat : Jl. Jakarta No.2  RW.3, Kelurahan : Penanggungan, Kecamatan : Klojen, Kota : Malang, Provinsi : Jawa Timur, Kode Pos : 65113')
+            .openPopup();
+        var marker = L.marker([-7.960639,112.632243]).addTo(map)
+            .bindPopup('Halter Coffee, Kategori : Coffee, Fasilitas : Wifi, Tempat Cas, Rating Gmaps : 4.7, Buka : 24 Jam, Pembayaran : Tunai dan Non Tunai, Parkir : Bayar, Harga Permalam : Tidak Ada, Bintang : Tidak Ada, Alamat : Jl. Ngantang No.47A, Kelurahan : Lowokwaru, Kecamatan : Lowokwaru, Kota : Malang, Provinsi : Jawa Timur, Kode Pos : 65111')
+            .openPopup();
+        var marker = L.marker([-7.942659,112.611597]).addTo(map)
+            .bindPopup('Gutenham Coffee House, Kategori : Coffee, Fasilitas : Wifi, Tempat Cas, Rating Gmaps : 4.6, Buka : 24 Jam, Pembayaran : Tunai dan Non Tunai, Parkir : Bayar, Harga Permalam : Tidak Ada, Bintang : Tidak Ada, Alamat : Jl. Mt Haryono 9 No.332, Kelurahan : Dinoyo, Kecamatan : Lowokwaru, Kota : Malang, Provinsi : Jawa Timur, Kode Pos : 65144')
+            .openPopup();
+        var marker = L.marker([-7.9633365,112.6106886]).addTo(map)
+            .bindPopup('Roemah Kantja, Kategori : Coffee, Fasilitas : Wifi, Tempat Cas, Rating Gmaps : 4.7, Buka : 24 Jam, Pembayaran : Tunai dan Non Tunai, Parkir : Bayar, Harga Permalam : Tidak Ada, Bintang : Tidak Ada, Alamat : Jl. Raya Candi II No.316, Kelurahan : Karangbesuki, Kecamatan : Sukun, Kota : Malang, Provinsi : Jawa Timur, Kode Pos : 65146')
+            .openPopup();
+        var marker = L.marker([-7.962919601,112.6231602]).addTo(map)
+            .bindPopup('And Coffee Space, Kategori : Coffee, Fasilitas : Wifi, Tempat Cas, Rating Gmaps : 4.6, Buka : 24 Jam, Pembayaran : Tunai dan Non Tunai, Parkir : Bayar, Harga Permalam : Tidak Ada, Bintang : Tidak Ada, Alamat : Jl. Jakarta No.20, Kelurahan : Penanggungan, Kecamatan : Klojen, Kota : Malang, Provinsi : Jawa Timur, Kode Pos : 65113')
+            .openPopup();
+        var marker = L.marker([-7.957025285,112.6181882]).addTo(map)
+            .bindPopup('Fore Coffee - Malang Town Square jawa timur, Kategori : Coffee, Fasilitas : Wifi, Tempat Cas, Rating Gmaps : 4.5, Buka : 24 Jam, Pembayaran : Tunai dan Non Tunai, Parkir : Bayar, Harga Permalam : Tidak Ada, Bintang : Tidak Ada, Alamat : Jl. Veteran No.2 Malang Town Square  , Kelurahan : Penanggungan, Kecamatan : Klojen, Kota : Malang, Provinsi : Jawa Timur, Kode Pos : 65111')
+            .openPopup();
+        var marker = L.marker([-7.965771905,112.6202217]).addTo(map)
+            .bindPopup('CW Coffee & Eatery - Simpang Ijen, Kategori : Coffee, Fasilitas : Wifi, Tempat Cas, Rating Gmaps : 4.3, Buka : 24 Jam, Pembayaran : Tunai dan Non Tunai, Parkir : Bayar, Harga Permalam : Tidak Ada, Bintang : Tidak Ada, Alamat : Jl. Simpang Ijen No.39 Blok B, Kelurahan : Oro-oro Dowo, Kecamatan : Klojen, Kota : Malang, Provinsi : Jawa Timur, Kode Pos : 65112')
+            .openPopup();
+        var marker = L.marker([-7.975579899,112.6124962]).addTo(map)
+            .bindPopup('Kotäsk Kaffe Co., Kategori : Coffee, Fasilitas : Wifi, Tempat Cas, Rating Gmaps : 4.5, Buka : 24 Jam, Pembayaran : Tunai dan Non Tunai, Parkir : Bayar, Harga Permalam : Tidak Ada, Bintang : Tidak Ada, Alamat : Jl. Raya Langsep No.2B, Kelurahan : Pisang Candi, Kecamatan : Sukun, Kota : Malang, Provinsi : Jawa Timur, Kode Pos : 65146')
+            .openPopup();
+        var marker = L.marker([-7.965739004,112.6087291]).addTo(map)
+            .bindPopup('Golden Heritage Koffie, Kategori : Coffee, Fasilitas : Wifi, Tempat Cas, Rating Gmaps : 4.6, Buka : 24 Jam, Pembayaran : Tunai dan Non Tunai, Parkir : Bayar, Harga Permalam : Tidak Ada, Bintang : Tidak Ada, Alamat : Jl. Raya Tidar No.36, Kelurahan : Karangbesuki, Kecamatan : Sukun, Kota : Malang, Provinsi : Jawa Timur, Kode Pos : 65146')
+            .openPopup();
+        var marker = L.marker([-7.9747424,112.6168467]).addTo(map)
+            .bindPopup('Bohemian Cafe, Kategori : Coffee, Fasilitas : Wifi, Tempat Cas, Rating Gmaps : 4.6, Buka : 24 Jam, Pembayaran : Tunai dan Non Tunai, Parkir : Bayar, Harga Permalam : Tidak Ada, Bintang : Tidak Ada, Alamat : Jl. Manggis No.2, Kelurahan : Bareng, Kecamatan : Klojen, Kota : Malang, Provinsi : Jawa Timur, Kode Pos : 65116')
+            .openPopup();
+        var marker = L.marker([-7.945656901,112.6208499]).addTo(map)
+            .bindPopup('Toko Kopi Makmur (Malang), Kategori : Coffee, Fasilitas : Wifi, Tempat Cas, Rating Gmaps : 4.7, Buka : 24 Jam, Pembayaran : Tunai dan Non Tunai, Parkir : Bayar, Harga Permalam : Tidak Ada, Bintang : Tidak Ada, Alamat : Jl. Cengkeh No.60 kav4, Kelurahan : Jatimulyo, Kecamatan : Lowokwaru, Kota : Malang, Provinsi : Jawa Timur, Kode Pos : 65141')
+            .openPopup();
+        var marker = L.marker([-7.9267033,112.6453935]).addTo(map)
+            .bindPopup('Oui Coffee Malang, Kategori : Coffee, Fasilitas : Wifi, Tempat Cas, Rating Gmaps : 4.8, Buka : 24 Jam, Pembayaran : Tunai dan Non Tunai, Parkir : Bayar, Harga Permalam : Tidak Ada, Bintang : Tidak Ada, Alamat : Jl. Jend. Ahmad Yani Utara Jl. Riverside No.1 Blk. C, Kelurahan : Polowijen, Kecamatan : Blimbing, Kota : Malang, Provinsi : Jawa Timur, Kode Pos : 65126')
+            .openPopup();
+        var marker = L.marker([-7.9779339,112.6195747]).addTo(map)
+            .bindPopup('Ikhove Malang, Kategori : Coffee, Fasilitas : Wifi, Tempat Cas, Rating Gmaps : 4.8, Buka : 24 Jam, Pembayaran : Tunai dan Non Tunai, Parkir : Bayar, Harga Permalam : Tidak Ada, Bintang : Tidak Ada, Alamat : Jl. Ijen Nirwana Residence, Kelurahan : Bareng, Kecamatan : Klojen, Kota : Malang, Provinsi : Jawa Timur, Kode Pos : 65116')
+            .openPopup();
+        var marker = L.marker([-7.9621665,112.626149]).addTo(map)
+            .bindPopup('kopi.pisan, Kategori : Coffee, Fasilitas : Wifi, Tempat Cas, Rating Gmaps : 4.5, Buka : 24 Jam, Pembayaran : Tunai dan Non Tunai, Parkir : Bayar, Harga Permalam : Tidak Ada, Bintang : Tidak Ada, Alamat : Jl. Brigjend Slamet Riadi No.190, Kelurahan : Penanggungan, Kecamatan : Klojen, Kota : Malang, Provinsi : Jawa Timur, Kode Pos : 65113')
+            .openPopup();
+        var marker = L.marker([-7.9462133,112.6131483]).addTo(map)
+            .bindPopup('Motiv Coffee, Kategori : Coffee, Fasilitas : Wifi, Tempat Cas, Rating Gmaps : 4.7, Buka : 24 Jam, Pembayaran : Tunai dan Non Tunai, Parkir : Bayar, Harga Permalam : Tidak Ada, Bintang : Tidak Ada, Alamat : Jl. Ruko Istana Dinoyo  B-8, Kelurahan : Dinoyo, Kecamatan : Lowokwaru, Kota : Malang, Provinsi : Jawa Timur, Kode Pos : 65145')
+            .openPopup();
+        var marker = L.marker([-7.946708196,112.6062235]).addTo(map)
+            .bindPopup('Sangkil Coffee, Kategori : Coffee, Fasilitas : Wifi, Tempat Cas, Rating Gmaps : 4.5, Buka : 24 Jam, Pembayaran : Tunai dan Non Tunai, Parkir : Bayar, Harga Permalam : Tidak Ada, Bintang : Tidak Ada, Alamat : Jl. Simpang Gajayana, Kelurahan : Merjosari, Kecamatan : Lowokwaru, Kota : Malang, Provinsi : Jawa Timur, Kode Pos : 65144')
+            .openPopup();
+        var marker = L.marker([-7.973366101,112.6346331]).addTo(map)
+            .bindPopup('Legi Pait, Kategori : Coffee, Fasilitas : Wifi, Tempat Cas, Rating Gmaps : 4.6, Buka : 24 Jam, Pembayaran : Tunai dan Non Tunai, Parkir : Bayar, Harga Permalam : Tidak Ada, Bintang : Tidak Ada, Alamat : Jl. Patimura No.24, Kelurahan : Klojen, Kecamatan : Klojen, Kota : Malang, Provinsi : Jawa Timur, Kode Pos : 65119')
+            .openPopup();
+        var marker = L.marker([-7.9599236,112.6143928]).addTo(map)
+            .bindPopup('Gang 7 Coffee Shop, Kategori : Coffee, Fasilitas : Wifi, Tempat Cas, Rating Gmaps : 4.9, Buka : 24 Jam, Pembayaran : Tunai dan Non Tunai, Parkir : Bayar, Harga Permalam : Tidak Ada, Bintang : Tidak Ada, Alamat : Jl. Sumbersari Gg. 7 No.45, Kelurahan : Sumbersari, Kecamatan : Lowokwaru, Kota : Malang, Provinsi : Jawa Timur, Kode Pos : 65145')
+            .openPopup();
+        var marker = L.marker([-7.95500434,112.6062223]).addTo(map)
+            .bindPopup('Kopi Studio 24, Kategori : Coffee, Fasilitas : Wifi, Tempat Cas, Rating Gmaps : 4.6, Buka : 24 Jam, Pembayaran : Tunai dan Non Tunai, Parkir : Bayar, Harga Permalam : Tidak Ada, Bintang : Tidak Ada, Alamat : Jl. Soekarno Hatta, Kelurahan : Mojolangu, Kecamatan : Lowokwaru, Kota : Malang, Provinsi : Jawa Timur, Kode Pos : 65141')
+            .openPopup();
+        var marker = L.marker([-7.952295682,112.6354751]).addTo(map)
+            .bindPopup('Niwa Garden, Kategori : Coffee, Fasilitas : Wifi, Tempat Cas, Rating Gmaps : 4.8, Buka : 24 Jam, Pembayaran : Tunai dan Non Tunai, Parkir : Bayar, Harga Permalam : Tidak Ada, Bintang : Tidak Ada, Alamat : Jl. Kedawung No.36, Kelurahan : Tulusrejo, Kecamatan : Lowokwaru, Kota : Malang, Provinsi : Jawa Timur, Kode Pos : 65141')
+            .openPopup();
+        var marker = L.marker([-7.974004982,112.62660661]).addTo(map)
+            .bindPopup('Kogu Café, Kategori : Coffee, Fasilitas : Wifi, Tempat Cas, Rating Gmaps : 4.5, Buka : 24 Jam, Pembayaran : Tunai dan Non Tunai, Parkir : Bayar, Harga Permalam : Tidak Ada, Bintang : Tidak Ada, Alamat : Jl. Welirang No.8, Kelurahan : Oro-oro Dowo, Kecamatan : Klojen, Kota : Malang, Provinsi : Jawa Timur, Kode Pos : 65112')
+        var marker = L.marker([-7.95990969,112.6220285]).addTo(map)
+            .bindPopup('Point Coffee Bandung, Kategori : Coffee, Fasilitas : Wifi, Tempat Cas, Rating Gmaps : 4.7, Buka : Tidak, Pembayaran : Tunai dan Non Tunai, Parkir : Bayar, Harga Permalam : Tidak Ada, Bintang : Tidak Ada, Alamat : Jl. Bandung No.36a, Kelurahan : Penanggungan, Kecamatan : Klojen, Kota : Malang, Provinsi : Jawa Timur, Kode Pos : 65113')
+        var marker = L.marker([-7.976930602,112.6308017]).addTo(map)
+            .bindPopup('Warung Tenang, Kategori : Coffee, Fasilitas : Wifi, Tempat Cas, Rating Gmaps : 4.6, Buka : 24 Jam, Pembayaran : Tunai dan Non Tunai, Parkir : Bayar, Harga Permalam : Tidak Ada, Bintang : Tidak Ada, Alamat : Jl. Brawijaya, Kelurahan : Pasar Bunga, Kecamatan : Klojen, Kota : Malang, Provinsi : Jawa Timur, Kode Pos : 65111')
+        var marker = L.marker([-7.94764,112.641978]).addTo(map)
+            .bindPopup('Baja.co, Kategori : Coffee, Fasilitas : Wifi, Tempat Cas, Rating Gmaps : 4.5, Buka : 24 Jam, Pembayaran : Tunai dan Non Tunai, Parkir : Bayar, Harga Permalam : Tidak Ada, Bintang : Tidak Ada, Alamat : Jl. Letjend S. Parman No.99  RW.02, Kelurahan : Purwantoro, Kecamatan : Blimbing, Kota : Malang, Provinsi : Jawa Timur, Kode Pos : 65126')
+        var marker = L.marker([-7.9475829,112.6203338]).addTo(map)
+            .bindPopup('Kopi Handall, Kategori : Coffee, Fasilitas : Wifi, Tempat Cas, Rating Gmaps : 4.6, Buka : 24 Jam, Pembayaran : Tunai dan Non Tunai, Parkir : Bayar, Harga Permalam : Tidak Ada, Bintang : Tidak Ada, Alamat : Jl. Semanggi Timur No.7, Kelurahan : Jatimulyo, Kecamatan : Lowokwaru, Kota : Malang, Provinsi : Jawa Timur, Kode Pos : 65141')
+        var marker = L.marker([-7.970376403,112.6606999]).addTo(map)
+            .bindPopup('Swag Coffee Co. Space, Kategori : Coffee, Fasilitas : Wifi, Tempat Cas, Rating Gmaps : 4.7, Buka : 24 Jam, Pembayaran : Tunai dan Non Tunai, Parkir : Bayar, Harga Permalam : Tidak Ada, Bintang : Tidak Ada, Alamat : Jl. Danau Tondano Raya F5B 21 A, Kelurahan : Sawojajar, Kecamatan : Kedungkandang, Kota : Malang, Provinsi : Jawa Timur, Kode Pos : 65139')
+        var marker = L.marker([-7.9631342,112.6326078]).addTo(map)
+            .bindPopup('Foursense Coffee, Kategori : Coffee, Fasilitas : Wifi, Tempat Cas, Rating Gmaps : 4.6, Buka : 24 Jam, Pembayaran : Tunai dan Non Tunai, Parkir : Bayar, Harga Permalam : Tidak Ada, Bintang : Tidak Ada, Alamat : Jl. Kaliurang No.36A, Kelurahan : Lowokwaru, Kecamatan : Lowokwaru, Kota : Malang, Provinsi : Jawa Timur, Kode Pos : 65111')
+        var marker = L.marker([-7.976614371,112.6646649]).addTo(map)
+            .bindPopup('Uma Coffee & Space, Kategori : Coffee, Fasilitas : Wifi, Tempat Cas, Rating Gmaps : 4.6, Buka : 24 Jam, Pembayaran : Tunai dan Non Tunai, Parkir : Bayar, Harga Permalam : Tidak Ada, Bintang : Tidak Ada, Alamat : Jl. Danau Sentani Raya C4E / 24, Kelurahan : Kalimutu, Kecamatan : Kedungkandang, Kota : Malang, Provinsi : Jawa Timur, Kode Pos : 65139')
+        var marker = L.marker([-7.981228887,112.6625729]).addTo(map)
+            .bindPopup('Nif Coffee, Kategori : Coffee, Fasilitas : Wifi, Tempat Cas, Rating Gmaps : 4.8, Buka : 24 Jam, Pembayaran : Tunai dan Non Tunai, Parkir : Bayar, Harga Permalam : Tidak Ada, Bintang : Tidak Ada, Alamat : Jl. Ki Ageng Gribig, Kelurahan : Madyopuro, Kecamatan : Kedungkandang, Kota : Malang, Provinsi : Jawa Timur, Kode Pos : 65139')
+        var marker = L.marker([-7.979848576,112.6833837]).addTo(map)
+            .bindPopup('Brinjava Café, Kategori : Coffee, Fasilitas : Wifi, Tempat Cas, Rating Gmaps : 4.4, Buka : 24 Jam, Pembayaran : Tunai dan Non Tunai, Parkir : Bayar, Harga Permalam : Tidak Ada, Bintang : Tidak Ada, Alamat : Jl. Perdana Kusuma No.49 RT.09/RW.04, Kelurahan : Cemorokandang, Kecamatan : Kedungkandang, Kota : Malang, Provinsi : Jawa Timur, Kode Pos : 65138')
+        var marker = L.marker([-7.979643499,112.6560683]).addTo(map)
+            .bindPopup('Easy Breezy Malang, Kategori : Coffee, Fasilitas : Wifi, Tempat Cas, Rating Gmaps : 4.6, Buka : 24 Jam, Pembayaran : Tunai dan Non Tunai, Parkir : Bayar, Harga Permalam : Tidak Ada, Bintang : Tidak Ada, Alamat : Jl. Sawojajar, Kelurahan : Sawojajar, Kecamatan : Kedungkandang, Kota : Malang, Provinsi : Jawa Timur, Kode Pos : 65139')
+        var marker = L.marker([-7.974952637,112.6538536]).addTo(map)
+            .bindPopup('Moon Cafe & Eatery, Kategori : Coffee, Fasilitas : Wifi, Tempat Cas, Rating Gmaps : 4.7, Buka : 24 Jam, Pembayaran : Tunai dan Non Tunai, Parkir : Bayar, Harga Permalam : Tidak Ada, Bintang : Tidak Ada, Alamat : Jl. Gg. IX No.9 No. 42, Kelurahan : Sawojajar, Kecamatan : Kedungkandang, Kota : Malang, Provinsi : Jawa Timur, Kode Pos : 65139')
+        var marker = L.marker([-7.985159104,112.6523153]).addTo(map)
+            .bindPopup('Kooka Coffee, Kategori : Coffee, Fasilitas : Wifi, Tempat Cas, Rating Gmaps : 4.6, Buka : 24 Jam, Pembayaran : Tunai dan Non Tunai, Parkir : Bayar, Harga Permalam : Tidak Ada, Bintang : Tidak Ada, Alamat : Jl. Dirgantara A1 No.19, Kelurahan : Lesanpuro, Kecamatan : Kedungkandang, Kota : Malang, Provinsi : Jawa Timur, Kode Pos : 65139')
+        var marker = L.marker([-8.037650762,112.6397692]).addTo(map)
+            .bindPopup('Love Coffee, Kategori : Coffee, Fasilitas : Wifi, Tempat Cas, Rating Gmaps : 4.7, Buka : 24 Jam, Pembayaran : Tunai dan Non Tunai, Parkir : Bayar, Harga Permalam : Tidak Ada, Bintang : Tidak Ada, Alamat : Jl. Raya, Kelurahan : Arjowinangun, Kecamatan : Kedungkandang, Kota : Malang, Provinsi : Jawa Timur, Kode Pos : 65132')
+        var marker = L.marker([-7.99362389,112.6478045]).addTo(map)
+            .bindPopup('Coffee Ngrawan, Kategori : Coffee, Fasilitas : Wifi, Tempat Cas, Rating Gmaps : 4.7, Buka : 24 Jam, Pembayaran : Tunai dan Non Tunai, Parkir : Bayar, Harga Permalam : Tidak Ada, Bintang : Tidak Ada, Alamat : Jl. Ki Ageng Gribig No.52, Kelurahan : Kedungkandang, Kecamatan : Kedungkandang, Kota : Malang, Provinsi : Jawa Timur, Kode Pos : 65136')
+        var marker = L.marker([-7.9744647,112.6695691]).addTo(map)
+            .bindPopup('Breguys Coffee, Kategori : Coffee, Fasilitas : Wifi, Tempat Cas, Rating Gmaps : 4.9, Buka : 24 Jam, Pembayaran : Tunai dan Non Tunai, Parkir : Bayar, Harga Permalam : Tidak Ada, Bintang : Tidak Ada, Alamat : Jl. Danau Jonge H7 D25, Kelurahan : Madyopuro, Kecamatan : Kedungkandang, Kota : Malang, Provinsi : Jawa Timur, Kode Pos : 65138')
+        var marker = L.marker([-7.976407326,112.6816832]).addTo(map)
+            .bindPopup('Tilik Kawan Cafe and Eatery, Kategori : Coffee, Fasilitas : Wifi, Tempat Cas, Rating Gmaps : 4.5, Buka : Tidak, Pembayaran : Tunai dan Non Tunai, Parkir : Bayar, Harga Permalam : Tidak Ada, Bintang : Tidak Ada, Alamat : Jl. Simpang Untung Sudiro, Kelurahan : Cemorokandang, Kecamatan : Kedungkandang, Kota : Malang, Provinsi : Jawa Timur, Kode Pos : 65138')
+        var marker = L.marker([-7.980350374,112.6543218]).addTo(map)
+            .bindPopup('Tomoro Coffee - Sawojajar, Kategori : Coffee, Fasilitas : Wifi, Tempat Cas, Rating Gmaps : 4.8, Buka : Tidak, Pembayaran : Tunai dan Non Tunai, Parkir : Bayar, Harga Permalam : Tidak Ada, Bintang : Tidak Ada, Alamat : Jl. Sawojajar, Kelurahan : Kedungkandang, Kecamatan : Kedungkandang, Kota : Malang, Provinsi : Jawa Timur, Kode Pos : 65136')
+        var marker = L.marker([-8.02895,112.649352]).addTo(map)
+            .bindPopup('Cafe Titik Senja, Kategori : Coffee, Fasilitas : Wifi, Tempat Cas, Rating Gmaps : 4.8, Buka : Tidak, Pembayaran : Tunai dan Non Tunai, Parkir : Bayar, Harga Permalam : Tidak Ada, Bintang : Tidak Ada, Alamat : Jl. Sekar Putih, Kelurahan : Wonokoyo, Kecamatan : Kedungkandang, Kota : Malang, Provinsi : Jawa Timur, Kode Pos : 65135')
+        var marker = L.marker([-7.9920686,112.6208302]).addTo(map)
+            .bindPopup('Toko Kopi Jaya, Sukun, Kategori : Coffee, Fasilitas : Wifi, Tempat Cas, Rating Gmaps : 4.6, Buka : Tidak, Pembayaran : Tunai dan Non Tunai, Parkir : Bayar, Harga Permalam : Tidak Ada, Bintang : Tidak Ada, Alamat : Jl. S. Supriadi No.30D, Kelurahan : Sukun, Kecamatan :  Sukun, Kota : Malang, Provinsi : Jawa Timur, Kode Pos : 65147')
+        var marker = L.marker([-8.001562486,112.6224125]).addTo(map)
+            .bindPopup('Kopi Langit Tuju, Kategori : Coffee, Fasilitas : Wifi, Tempat Cas, Rating Gmaps : 4.7, Buka : Tidak, Pembayaran : Tunai dan Non Tunai, Parkir : Bayar, Harga Permalam : Tidak Ada, Bintang : Tidak Ada, Alamat : Jl. Janti Bar. No.15, Kelurahan : Bandungrejosari, Kecamatan :  Sukun, Kota : Malang, Provinsi : Jawa Timur, Kode Pos : 65148')
+        var marker = L.marker([-7.998779105,112.6188244]).addTo(map)
+            .bindPopup('Pesenkopi Sukun, Kategori : Coffee, Fasilitas : Wifi, Tempat Cas, Rating Gmaps : 4.6, Buka : Tidak, Pembayaran : Tunai dan Non Tunai, Parkir : Bayar, Harga Permalam : Tidak Ada, Bintang : Tidak Ada, Alamat :  Jl. S. Supriadi, Kelurahan : Sukun, Kecamatan :  Sukun, Kota : Malang, Provinsi : Jawa Timur, Kode Pos : 65148')
+        var marker = L.marker([-8.004979079,112.6152337]).addTo(map)
+            .bindPopup('Kedai Kampoeng, Kategori : Coffee, Fasilitas : Wifi, Tempat Cas, Rating Gmaps : 4.3, Buka : Tidak, Pembayaran : Tunai dan Non Tunai, Parkir : Bayar, Harga Permalam : Tidak Ada, Bintang : Tidak Ada, Alamat : Jl. Klayatan Gg III Perumahan Griya Warna kav 2, Kelurahan : Bandungrejosari, Kecamatan :  Sukun, Kota : Malang, Provinsi : Jawa Timur, Kode Pos : 65148')
+        var marker = L.marker([-7.9931733,112.6205353]).addTo(map)
+            .bindPopup('Beli Kopi Malang Sukun, Kategori : Coffee, Fasilitas : Wifi, Tempat Cas, Rating Gmaps : 4.5, Buka : Tidak, Pembayaran : Tunai dan Non Tunai, Parkir : Bayar, Harga Permalam : Tidak Ada, Bintang : Tidak Ada, Alamat : Jl. S. Supriadi No.34, Kelurahan : Sukun, Kecamatan :  Sukun, Kota : Malang, Provinsi : Jawa Timur, Kode Pos : 65147')
+        var marker = L.marker([-7.97037639412769,112.660699896093]).addTo(map)
+            .bindPopup('Swag Coffe Co. Space, Kategori : Coffee, Fasilitas : Wifi, Tempat Cas, Rating Gmaps : 4.8, Buka : Tidak, Pembayaran : Tunai dan Non Tunai, Parkir : Bayar, Harga Permalam : Tidak Ada, Bintang : Tidak Ada, Alamat : Jl. Danau Tondano Raya F5B 21 A, Kelurahan : Sawojajar, Kecamatan :   Kedungkandang, Kota : Malang, Provinsi : Jawa Timur, Kode Pos : 65139')
+        var marker = L.marker([-7.97677039929647,112.66372010095]).addTo(map)
+            .bindPopup('Vianota Coffee, Kategori : Coffee, Fasilitas : Wifi, Tempat Cas, Rating Gmaps : 4.5, Buka : Tidak, Pembayaran : Tunai dan Non Tunai, Parkir : Bayar, Harga Permalam : Tidak Ada, Bintang : Tidak Ada, Alamat : Jl. Danau Rawa Pening No.4 Kav 3, Kelurahan : Madyopuro, Kecamatan :   Kedungkandang, Kota : Malang, Provinsi : Jawa Timur, Kode Pos : 65139')
+        var marker = L.marker([-7.98517360086567,112.652310651102]).addTo(map)
+            .bindPopup('Kooka Coffee, Kategori : Coffee, Fasilitas : Wifi, Tempat Cas, Rating Gmaps : 4.6, Buka : Tidak, Pembayaran : Tunai dan Non Tunai, Parkir : Bayar, Harga Permalam : Tidak Ada, Bintang : Tidak Ada, Alamat : Jl. Dirgantara A1 No.19, Kelurahan : Lesanpuro, Kecamatan :   Kedungkandang, Kota : Malang, Provinsi : Jawa Timur, Kode Pos : 65139')
+        var marker = L.marker([-7.97599130078438,112.664991800001]).addTo(map)
+            .bindPopup('Manhattan Cafe, Kategori : Coffee, Fasilitas : Wifi, Tempat Cas, Rating Gmaps : 4.7, Buka : Tidak, Pembayaran : Tunai dan Non Tunai, Parkir : Bayar, Harga Permalam : Tidak Ada, Bintang : Tidak Ada, Alamat : Jl. Danau Sentani Raya No.C4E-33, Kelurahan : Madyopuro, Kecamatan :   Kedungkandang, Kota : Malang, Provinsi : Jawa Timur, Kode Pos : 651399')
+        var marker = L.marker([-7.98615630105326,112.653010099401]).addTo(map)
+            .bindPopup('Roewang Tamoe Coffee & Space, Kategori : Coffee, Fasilitas : Wifi, Tempat Cas, Rating Gmaps : 4.6, Buka : Tidak, Pembayaran : Tunai dan Non Tunai, Parkir : Bayar, Harga Permalam : Tidak Ada, Bintang : Tidak Ada, Alamat : Jl. Simpang Dirgantara III No.A3 - 33, Kelurahan : Lesanpuro, Kecamatan :   Kedungkandang, Kota : Malang, Provinsi : Jawa Timur, Kode Pos : 65139')
+        var marker = L.marker([-7.9788231220357,112.634749672602]).addTo(map)
+            .bindPopup('Kedai Kopi  Cahaya Baru, Kategori : Coffee, Fasilitas : Wifi, Tempat Cas, Rating Gmaps : 4.7, Buka : Tidak, Pembayaran : Tunai dan Non Tunai, Parkir : Bayar, Harga Permalam : Tidak Ada, Bintang : Tidak Ada, Alamat : Jl. Danau Jonge, Kelurahan : Madyopuro, Kecamatan :   Kedungkandang, Kota : Malang, Provinsi : Jawa Timur, Kode Pos : 65139')
+        var marker = L.marker([-7.97569459871673,112.662101598052]).addTo(map)
+            .bindPopup('Iwabeka Sawojajar, Kategori : Coffee, Fasilitas : Wifi, Tempat Cas, Rating Gmaps : 4.6, Buka : 24 Jam, Pembayaran : Tunai dan Non Tunai, Parkir : Bayar, Harga Permalam : Tidak Ada, Bintang : Tidak Ada, Alamat : Jl. Danau Bratan Raya No.C2 A12, Kelurahan : Sawojajar, Kecamatan :   Kedungkandang, Kota : Malang, Provinsi : Jawa Timur, Kode Pos : 65139')
+        var marker = L.marker([-7.97111250013932,112.660887799714]).addTo(map)
+            .bindPopup('New Social Palace Cafe, Kategori : Coffee, Fasilitas : Wifi, Tempat Cas, Rating Gmaps : 4.5, Buka : 24 Jam, Pembayaran : Tunai dan Non Tunai, Parkir : Bayar, Harga Permalam : Tidak Ada, Bintang : Tidak Ada, Alamat : Jl. Danau Tondano Blok BF.21 D, Kelurahan : Sawojajar, Kecamatan :   Kedungkandang, Kota : Malang, Provinsi : Jawa Timur, Kode Pos : 65139')
+        var marker = L.marker([-7.98935529879433,112.634752099559]).addTo(map)
+            .bindPopup('Mars Café, Kategori : Coffee, Fasilitas : Wifi, Tempat Cas, Rating Gmaps : 4.3, Buka : 24 Jam, Pembayaran : Tunai dan Non Tunai, Parkir : Bayar, Harga Permalam : Tidak Ada, Bintang : Tidak Ada, Alamat : Jl. Laksamana Martadinata Gg. Lonceng No.62, Kelurahan : Kotalama, Kecamatan :   Kedungkandang, Kota : Malang, Provinsi : Jawa Timur, Kode Pos : 65118')
+        var marker = L.marker([-7.99345520125098,112.648179699726]).addTo(map)
+            .bindPopup('Coffee Ngrawan, Kategori : Coffee, Fasilitas : Wifi, Tempat Cas, Rating Gmaps : 4.5, Buka : 24 Jam, Pembayaran : Tunai dan Non Tunai, Parkir : Bayar, Harga Permalam : Tidak Ada, Bintang : Tidak Ada, Alamat : Jl. Ki Ageng Gribig No.52, Kelurahan : Kedungkandang, Kecamatan :   Kedungkandang, Kota : Malang, Provinsi : Jawa Timur, Kode Pos : 65136')
+        var marker = L.marker([-7.97508440113755,112.654102798885]).addTo(map)
+            .bindPopup('Moon Cafe & Eatery, Kategori : Coffee, Fasilitas : Wifi, Tempat Cas, Rating Gmaps : 4.6, Buka : 24 Jam, Pembayaran : Tunai dan Non Tunai, Parkir : Bayar, Harga Permalam : Tidak Ada, Bintang : Tidak Ada, Alamat : Jl. Gg. IX No.9 No. 42, Kelurahan : Sawojajar, Kecamatan :   Kedungkandang, Kota : Malang, Provinsi : Jawa Timur, Kode Pos : 65139')
+        var marker = L.marker([-7.98032970001845,112.654323900105]).addTo(map)
+            .bindPopup('Tomoro Coffee - Sawojajar, Kategori : Coffee, Fasilitas : Wifi, Tempat Cas, Rating Gmaps : 4.6, Buka : 24 Jam, Pembayaran : Tunai dan Non Tunai, Parkir : Gratis, Harga Permalam : Tidak Ada, Bintang : Tidak Ada, Alamat : Jl. Danau Ranau, Kelurahan : Sawojajar, Kecamatan :   Kedungkandang, Kota : Malang, Provinsi : Jawa Timur, Kode Pos : 65139')
+        var marker = L.marker([-7.97347349991597,112.658587600114]).addTo(map)
+            .bindPopup('Mas Kuncir Street Coffee, Kategori : Coffee, Fasilitas : Wifi, Tempat Cas, Rating Gmaps : 4.7, Buka : 24 Jam, Pembayaran : Tunai dan Non Tunai, Parkir : Gratis, Harga Permalam : Tidak Ada, Bintang : Tidak Ada, Alamat : Jl. Danau Bratan Raya No.1, Kelurahan : Sawojajar, Kecamatan :   Kedungkandang, Kota : Malang, Provinsi : Jawa Timur, Kode Pos : 65139')
+         var marker = L.marker([-7.9812293002888,112.662566599781]).addTo(map)
+            .bindPopup('Nif Coffee, Kategori : Coffee, Fasilitas : Wifi, Tempat Cas, Rating Gmaps : 4.8, Buka : 24 Jam, Pembayaran : Tunai dan Non Tunai, Parkir : Gratis, Harga Permalam : Tidak Ada, Bintang : Tidak Ada, Alamat : Jl. Ki Ageng Gribig, Kelurahan : Madyopuro, Kecamatan :   Kedungkandang, Kota : Malang, Provinsi : Jawa Timur, Kode Pos : 65139')
+        var marker = L.marker([-7.97289190041464,112.66296719997]).addTo(map)
+            .bindPopup('Bu.Mi. Cafe, Kategori : Coffee, Fasilitas : Wifi, Tempat Cas, Rating Gmaps : 4.8, Buka : 24 Jam, Pembayaran : Tunai dan Non Tunai, Parkir : Gratis, Harga Permalam : Tidak Ada, Bintang : Tidak Ada, Alamat : Jl. Danau Kerinci P3 E24A, Kelurahan : Sawojajar, Kecamatan :   Kedungkandang, Kota : Malang, Provinsi : Jawa Timur, Kode Pos : 65139')
+        var marker = L.marker([-7.97662460086235,112.664667118076]).addTo(map)
+            .bindPopup('Uma Coffee & Space, Kategori : Coffee, Fasilitas : Wifi, Tempat Cas, Rating Gmaps : 4.5, Buka : Tidak, Pembayaran : Tunai dan Non Tunai, Parkir : Bayar, Harga Permalam : Tidak Ada, Bintang : Tidak Ada, Alamat : Jl. Danau Sentani Raya C4E / 24, Kelurahan : Sawojajar, Kecamatan :   Kedungkandang, Kota : Malang, Provinsi : Jawa Timur, Kode Pos : 65139')   
+        var marker = L.marker([-7.97872749900954,112.629246399827]).addTo(map)
+            .bindPopup('Soma Coffee - Malang, Kategori : Coffee, Fasilitas : Wifi, Tempat Cas, Rating Gmaps : 4.7, Buka : Tidak, Pembayaran : Tunai dan Non Tunai, Parkir : Bayar, Harga Permalam : Tidak Ada, Bintang : Tidak Ada, Alamat : Jl. Jenderal Basuki Rahmat No.37, Kelurahan : Kauman, Kecamatan :   Klojen, Kota : Malang, Provinsi : Jawa Timur, Kode Pos : 65119')
+        var marker = L.marker([-7.96284070086613,112.636821698839]).addTo(map)
+            .bindPopup('Sorai Kedai Kopi & Teh, Kategori : Coffee, Fasilitas : Wifi, Tempat Cas, Rating Gmaps : 4.5, Buka : Tidak, Pembayaran : Tunai dan Non Tunai, Parkir : Bayar, Harga Permalam : Tidak Ada, Bintang : Tidak Ada, Alamat : Jl. Batanghari No.2C, Kelurahan : Rampal Celaket, Kecamatan :   Klojen, Kota : Malang, Provinsi : Jawa Timur, Kode Pos : 651111')
+        var marker = L.marker([-7.97825580093078,112.629239800042]).addTo(map)
+            .bindPopup('All About Koffie by Kawisari Est 1870, Kategori : Coffee, Fasilitas : Wifi, Tempat Cas, Rating Gmaps : 4.6, Buka : Tidak, Pembayaran : Tunai dan Non Tunai, Parkir : Gratis, Harga Permalam : Tidak Ada, Bintang : Tidak Ada, Alamat : Jl. Jenderal Basuki Rahmat No.49, Kelurahan : Kauman, Kecamatan :   Klojen, Kota : Malang, Provinsi : Jawa Timur, Kode Pos : 65119')
+        var marker = L.marker([-7.96807218115566,112.627011319426]).addTo(map)
+            .bindPopup('Lakon Rakyat - Kitchen & Coffee, Kategori : Coffee, Fasilitas : Wifi, Tempat Cas, Rating Gmaps : 4.9, Buka : Tidak, Pembayaran : Tunai dan Non Tunai, Parkir : Bayar, Harga Permalam : Tidak Ada, Bintang : Tidak Ada, Alamat : Jl. Guntur No.23, Kelurahan : Oro-oro Dowo, Kecamatan :   Klojen, Kota : Malang, Provinsi : Jawa Timur, Kode Pos : 65119')
+        var marker = L.marker([-7.97729610133478,112.627696050264]).addTo(map)
+            .bindPopup('Kopi 1922, Kategori : Coffee, Fasilitas : Wifi, Tempat Cas, Rating Gmaps : 4.6, Buka : Tidak, Pembayaran : Tunai dan Non Tunai, Parkir : Gratis, Harga Permalam : Tidak Ada, Bintang : Tidak Ada, Alamat : Jl. Arjuno No.30 RW 1 RT 1, Kelurahan : Kauman, Kecamatan :   Klojen, Kota : Malang, Provinsi : Jawa Timur, Kode Pos : 65111')
+        var marker = L.marker([-7.96724380036957,112.615550900218]).addTo(map)
+            .bindPopup('Toko Kopi Tuku - Malang, Kategori : Coffee, Fasilitas : Wifi, Tempat Cas, Rating Gmaps : 4.8, Buka : Tidak, Pembayaran : Tunai dan Non Tunai, Parkir : Bayar, Harga Permalam : Tidak Ada, Bintang : Tidak Ada, Alamat : Jl. Jombang No.27, Kelurahan : Gading Kasri, Kecamatan :   Klojen, Kota : Malang, Provinsi : Jawa Timur, Kode Pos : 65115')
+        var marker = L.marker([-7.97104786346871,112.635322280608]).addTo(map)
+            .bindPopup('Ruca Koffie, Kategori : Coffee, Fasilitas : Wifi, Tempat Cas, Rating Gmaps : 4.5, Buka : Tidak, Pembayaran : Tunai dan Non Tunai, Parkir : Bayar, Harga Permalam : Tidak Ada, Bintang : Tidak Ada, Alamat : Jl. Doktor Sutomo No.27, Kelurahan : Klojen, Kecamatan :   Klojen, Kota : Malang, Provinsi : Jawa Timur, Kode Pos : 65111')
+        var marker = L.marker([-7.97324547874529,112.636357474556]).addTo(map)
+            .bindPopup('Kios Kopi Klojen, Kategori : Coffee, Fasilitas : Wifi, Tempat Cas, Rating Gmaps : 4.7, Buka : Tidak, Pembayaran : Tunai dan Non Tunai, Parkir : Bayar, Harga Permalam : Tidak Ada, Bintang : Tidak Ada, Alamat : Jl. Trunojoyo No.20, Kelurahan : Klojen, Kecamatan :   Klojen, Kota : Malang, Provinsi : Jawa Timur, Kode Pos : 65111')
+        var marker = L.marker([-7.97843359943629,112.628744899773]).addTo(map)
+            .bindPopup('Kedai Kopi Rumah 1870, Kategori : Coffee, Fasilitas : Wifi, Tempat Cas, Rating Gmaps : 4.6, Buka : Tidak, Pembayaran : Tunai dan Non Tunai, Parkir : Bayar, Harga Permalam : Tidak Ada, Bintang : Tidak Ada, Alamat : Jl. Jend. Basuki Rachmat Gg. VI No.988, Kelurahan : Kauman, Kecamatan :   Klojen, Kota : Malang, Provinsi : Jawa Timur, Kode Pos : 65119')
+        var marker = L.marker([-7.9418441, 112.6487241]).addTo(map)
+            .bindPopup('Grand Mercure Malang Mirama, Kategori : Hotel, Fasilitas : 3 restoran, 2 bar, kolam renang, spa, gym, klub anak-anak dan 11 ruang pertemuan., Rating Gmaps : 4.8, Buka : 24 Jam, Pembayaran : Tunai dan Non Tunai, Parkir : Gratis, Harga Permalam : Rp1,073,500.00, Bintang : Bintang 5, Alamat : Jl. Raden Panji Suroso No.7, Kelurahan :  Purwodadi, Kecamatan : Blimbing, Kota :  Malang, Provinsi :  Jawa Timur, Kode Pos : 65126')
+            .openPopup();
+        var marker = L.marker([-7.9700305, 112.6251635]).addTo(map)
+            .bindPopup('The Shalimar Boutique Hotel Malang, Kategori : Hotel, Fasilitas : Kolam renang outdoor, gym, spa, taman, dan perpustakaan., Rating Gmaps : 4.7, Buka : 24 Jam, Pembayaran : Tunai dan Non Tunai, Parkir : Gratis, Harga Permalam : Rp1,157,713.00, Bintang : Bintang 5, Alamat : Jl. Cerme No.16, Kelurahan :  Oro-oro Dowo, Kecamatan : Klojen, Kota :  Malang, Provinsi :  Jawa Timur, Kode Pos : 65112' )
+            .openPopup();
+        var marker = L.marker([-7.9772146, 112.6331557]).addTo(map)
+            .bindPopup('Hotel Tugu Malang, Kategori : Hotel, Fasilitas : Spa, kafe, toko roti, dan bar/toko wine, kolam renang ., Rating Gmaps : 4.7, Buka : 24 Jam, Pembayaran : Tunai dan Non Tunai, Parkir : Gratis, Harga Permalam : Rp1,250,907.00, Bintang : Bintang 5, Alamat : Jl. Tugu No.3, Kelurahan :  Kauman, Kecamatan : Klojen, Kota :  Malang, Provinsi :  Jawa Timur, Kode Pos : 65119')
+            .openPopup();
+        var marker = L.marker([-7.9266257, 112.6025822]).addTo(map)
+            .bindPopup('Begawan Premium Student Apartment, Kategori : Hotel, Fasilitas : Restoran, supermarket, wifi, pusat kebugaran, kolam renang indoor, Rating Gmaps : 4.4, Buka : 24 Jam, Pembayaran : Tunai dan Non Tunai, Parkir : Gratis, Harga Permalam : Rp960,000.00, Bintang : Bintang 5, Alamat : Jl. Raya Tlogomas No.1-3, Kelurahan :  Tlogomas, Kecamatan : Lowokwaru, Kota :  Malang, Provinsi :  Jawa Timur, Kode Pos : 65144')
+            .openPopup();
+        var marker = L.marker([-7.9625448, 112.6363899]).addTo(map)
+            .bindPopup('Savana Hotel & Convention, Kategori : Hotel, Fasilitas : Sarapan, parkir, antar-jemput bandara,  2 restoran, spa, kolam renang, sauna, dan ruang kebugaran., Rating Gmaps : 4.5, Buka : 24 Jam, Pembayaran : Tunai dan Non Tunai, Parkir : Gratis, Harga Permalam : Rp593,470.00, Bintang : Bintang 4, Alamat : Jl. Letjen Sutoyo No.30  RW.34, Kelurahan :  Rampal Celaket, Kecamatan : Klojen, Kota :  Malang, Provinsi :  Jawa Timur, Kode Pos : 65111')
+            .openPopup();
+        var marker = L.marker([-7.9775671, 112.624005]).addTo(map)
+            .bindPopup('Hotel Aria Gajayana, Kategori : Hotel, Fasilitas : Restoran, lounge di lobi, kolam renang outdoor, spa, bar dengan ruang karaoke pribadi., Rating Gmaps : 4.6, Buka : 24 Jam, Pembayaran : Tunai dan Non Tunai, Parkir : Gratis, Harga Permalam : Rp479,484.00, Bintang : Bintang 4, Alamat : Jl. Kawi Mal Olympic Garden  , Kelurahan :  Kauman, Kecamatan : Klojen, Kota :  Malang, Provinsi :  Jawa Timur, Kode Pos : 65119')
+            .openPopup();
+        var marker = L.marker([-7.9494227, 112.6392311]).addTo(map)
+            .bindPopup('Atria Hotel, Kategori : Hotel, Fasilitas : Restoran, bar, spa, gym, kolam renang, ruang serbaguna, sarapan ditawarkan dengan biaya tambahan., Rating Gmaps : 4.6, Buka : 24 Jam, Pembayaran : Tunai dan Non Tunai, Parkir : Gratis, Harga Permalam : Rp639,375.00, Bintang : Bintang 4, Alamat : Jl. Letjend S. Parman No.87 - 89, Kelurahan :  Purwantoro, Kecamatan : Blimbing, Kota :  Malang, Provinsi :  Jawa Timur, Kode Pos : 65122')
+            .openPopup();
+        var marker = L.marker([-7.9681545, 112.6354598]).addTo(map)
+            .bindPopup('THE 1O1 Malang OJ, Kategori : Hotel, Fasilitas : Kafe, restoran, lounge, business center, 5 ruang pertemuan, dan kolam renang., Rating Gmaps : 4.7, Buka : 24 Jam, Pembayaran : Tunai dan Non Tunai, Parkir : Gratis, Harga Permalam : Rp455,492.00, Bintang : Bintang 4, Alamat : Jl. Dr. Cipto No.11, Kelurahan :  Rampal Celaket, Kecamatan : Klojen, Kota :  Malang, Provinsi :  Jawa Timur, Kode Pos : 65111')
+            .openPopup();
+        var marker = L.marker([-7.9260617, 112.6451968]).addTo(map)
+            .bindPopup('HARRIS Hotel and Conventions Malang, Kategori : Hotel, Fasilitas : Kafe  24 jam, restoran Italia, kios jus, klub anak-anak, aula, ruang pertemuan dan 3 kolam renang., Rating Gmaps : 4.6, Buka : 24 Jam, Pembayaran : Tunai dan Non Tunai, Parkir : Gratis, Harga Permalam : Rp595,773.00, Bintang : Bintang 4, Alamat : Ahmad Yani Utara Jl. Riverside Blk. C No.1, Kelurahan :  Polowijen, Kecamatan : Blimbing, Kota :  Malang, Provinsi :  Jawa Timur, Kode Pos : 65126')
+            .openPopup();
+        var marker = L.marker([-7.9358933, 112.6513033]).addTo(map)
+            .bindPopup('Hotel Grand Cakra, Kategori : Hotel, Fasilitas : Restoran, 2 bar,kolam renang, spa, ruang pertemuan dan ruang acara., Rating Gmaps : 4.4, Buka : 24 Jam, Pembayaran : Tunai dan Non Tunai, Parkir : Gratis, Harga Permalam : Rp403,826.00, Bintang : Bintang 4, Alamat : Jl. Green Boulevard No.2, Kelurahan :  Purwodadi, Kecamatan : Blimbing, Kota :  Malang, Provinsi :  Jawa Timur, Kode Pos : 65125')
+            .openPopup();
+        var marker = L.marker([-7.9581932, 112.6369894]).addTo(map)
+            .bindPopup('Hotel Santika Premiere, Kategori : Hotel, Fasilitas : Kafe, kolam renang outdoor, ruang pusat kebugaran, dan business center., Rating Gmaps : 4.6, Buka : 24 Jam, Pembayaran : Tunai dan Non Tunai, Parkir : Gratis, Harga Permalam : Rp667,590.00, Bintang : Bintang 4, Alamat : Jl. Letjen Sutoyo No.79, Kelurahan :  Lowokwaru, Kecamatan : Lowokwaru, Kota :  Malang, Provinsi :  Jawa Timur, Kode Pos : 65141')
+            .openPopup();
+        var marker = L.marker([-7.9810449, 112.6156194]).addTo(map)
+            .bindPopup('Ijen Suites Resort & Convention, Kategori : Hotel, Fasilitas : Restoran, bar, pusat kebugaran, kolam renang outdoor, jalur joging, dan ruang serbaguna yang luas., Rating Gmaps : 4.6, Buka : 24 Jam, Pembayaran : Tunai dan Non Tunai, Parkir : Gratis, Harga Permalam : Rp540,175.00, Bintang : Bintang 4, Alamat : Jl. Ijen Nirwana Raya Blok A No.16, Kelurahan :  Bareng, Kecamatan : Klojen, Kota :  Malang, Provinsi :  Jawa Timur, Kode Pos : 65116')
+            .openPopup();
+        var marker = L.marker([-7.9438336, 112.6417938]).addTo(map)
+            .bindPopup('The Alana Hotel, Kategori : Hotel, Fasilitas : Restoran, bar, pusat kebugaran, spa, Rating Gmaps : 4.6, Buka : 24 Jam, Pembayaran : Tunai dan Non Tunai, Parkir : Gratis, Harga Permalam : Rp562,789.00, Bintang : Bintang 4, Alamat : Jl. Ahmad Yani No.12, Kelurahan :  Blimbing, Kecamatan : Blimbing, Kota :  Malang, Provinsi :  Jawa Timur, Kode Pos : 65126')
+            .openPopup();
+        var marker = L.marker([-7.9729393, 112.6304629]).addTo(map)
+            .bindPopup('Tychi Hotel, Kategori : Hotel, Fasilitas : restoran, kafe kasual, ruang acara, area bermain anak-anak, kolam renang outdoor, dan sarapan., Rating Gmaps : 4, Buka : 24 Jam, Pembayaran : Tunai dan Non Tunai, Parkir : Gratis, Harga Permalam : Rp348,705.00, Bintang : Bintang 4, Alamat : Jl. Jaksa Agung Suprapto No.17, Kelurahan :  Samaan, Kecamatan : Klojen, Kota :  Malang, Provinsi :  Jawa Timur, Kode Pos : 65112')
+            .openPopup();
+        var marker = L.marker([-7.9953991, 112.6329014]).addTo(map)
+            .bindPopup('Ascent Premiere Hotel & Convention, Kategori : Hotel, Fasilitas : Restoran, lounge, bar, infinity pool outdoor, gym, dan spa, ballroom dan 5 ruang pertemuan., Rating Gmaps : 4.5, Buka : 24 Jam, Pembayaran : Tunai dan Non Tunai, Parkir : Gratis, Harga Permalam : Rp447,788.00, Bintang : Bintang 4, Alamat : Jl. Kolonel Sugiono No.6, Kelurahan :  Ciptomulyo, Kecamatan : Sukun, Kota :  Malang, Provinsi :  Jawa Timur, Kode Pos : 65134')
+            .openPopup();
+        var marker = L.marker([-7.9328886, 112.6034318]).addTo(map)
+            .bindPopup('Fave Hotel Malang, Kategori : Hotel, Fasilitas : Restoran, lounge, wifi, room service, Rating Gmaps : 4.7, Buka : 24 Jam, Pembayaran : Tunai dan Non Tunai, Parkir : Gratis, Harga Permalam : Rp336,482.00, Bintang : Bintang 3, Alamat : Jl. Raya Tlogomas No.25, Kelurahan :  Tlogomas, Kecamatan : Lowokwaru, Kota :  Malang, Provinsi :  Jawa Timur, Kode Pos : 65144')
+            .openPopup();
+        var marker = L.marker([-7.9760547, 112.6292145]).addTo(map)
+            .bindPopup('Whiz Prime Hotel Basuki Rahmat Malang, Kategori : Hotel, Fasilitas : Kolam renang outdoor, massage, wifi, restoran, Rating Gmaps : 4.4, Buka : 24 Jam, Pembayaran : Tunai dan Non Tunai, Parkir : Gratis, Harga Permalam : Rp532,770.00, Bintang : Bintang 3, Alamat : Jl. Jenderal Basuki Rahmat No.85-87, Kelurahan :  Klojen, Kecamatan : Klojen, Kota :  Malang, Provinsi :  Jawa Timur, Kode Pos : 65119')
+            .openPopup();
+        var marker = L.marker([-7.9632248, 112.6359028]).addTo(map)
+            .bindPopup('Dewarna Hotel Sutoyo, Kategori : Hotel, Fasilitas : Pusat kebugaran, wifi,room service, Rating Gmaps : 4, Buka : 24 Jam, Pembayaran : Tunai dan Non Tunai, Parkir : Gratis, Harga Permalam : Rp271,649.00, Bintang : Bintang 3, Alamat : Jl. Letjen Sutoyo No.22, Kelurahan :  Rampal Celaket, Kecamatan : Klojen, Kota :  Malang, Provinsi :  Jawa Timur, Kode Pos : 65111')
+            .openPopup();
+        var marker = L.marker([-7.9841822, 112.6341085]).addTo(map)
+            .bindPopup('Dewarna Hotel Arifin, Kategori : Hotel, Fasilitas : Wifi, sarapan, parkir, ac, Rating Gmaps : 3.8, Buka : 24 Jam, Pembayaran : Tunai dan Non Tunai, Parkir : Gratis, Harga Permalam : Rp233,673.00, Bintang : Bintang 3, Alamat : Jl. Zainul Arifin No.55, Kelurahan :  Sukoharjo, Kecamatan : Klojen, Kota :  Malang, Provinsi :  Jawa Timur, Kode Pos : 65119')
+            .openPopup();
+        var marker = L.marker([-7.9685959, 112.6358788]).addTo(map)
+            .bindPopup('Hotel Gajahmada Graha, Kategori : Hotel, Fasilitas : Wi-Fi gratis, fasilitas pembuat teh dan kopi, suite, tersedia room service, dan restoran, Rating Gmaps : 4.3, Buka : 24 Jam, Pembayaran : Tunai dan Non Tunai, Parkir : Gratis, Harga Permalam : Rp282,200.00, Bintang : Bintang 3, Alamat : Jl. Dr. Cipto No.17, Kelurahan :  Rampal Celaket, Kecamatan : Klojen, Kota :  Malang, Provinsi :  Jawa Timur, Kode Pos : 65111')
+            .openPopup();
+        var marker = L.marker([-7.9745435, 112.6295169]).addTo(map)
+            .bindPopup('Hotel Trio Indah 2, Kategori : Hotel, Fasilitas : Ruang acara, restoran 24 jam, dan Wi-Fi, serta sarapan dan tempat parkir., Rating Gmaps : 4.3, Buka : 24 Jam, Pembayaran : Tunai dan Non Tunai, Parkir : Gratis, Harga Permalam : Rp247,716.00, Bintang : Bintang 3, Alamat : Jl. Brigjend Slamet Riadi No.1-3, Kelurahan :  Oro-oro Dowo, Kecamatan : Klojen, Kota :  Malang, Provinsi :  Jawa Timur, Kode Pos : 65119')
+            .openPopup();
+        var marker = L.marker([-7.9932658, 112.6331649]).addTo(map)
+            .bindPopup('Hotel Montana Malang, Kategori : Hotel, Fasilitas : Layanan antar-jemput di area tertentu, restoran santai 24 jam, kedai kopi, serta fasilitas konferensi., Rating Gmaps : 4.1, Buka : 24 Jam, Pembayaran : Tunai dan Non Tunai, Parkir : Gratis, Harga Permalam : Rp263,992.00, Bintang : Bintang 3, Alamat : Jl. Kahuripan No.9 RW.3, Kelurahan :  Kauman, Kecamatan : Klojen, Kota :  Malang, Provinsi :  Jawa Timur, Kode Pos : 65111')
+            .openPopup();
+        var marker = L.marker([-7.9769827, 112.6323475]).addTo(map)
+            .bindPopup('Hotel Montana Dua Malang, Kategori : Hotel, Fasilitas : Restoran 24 jam, kafe, gym, kolam renang, spa, antar-jemput bandara, sarapan dan tempat parkir juga ditawarkan., Rating Gmaps : 4.1, Buka : 24 Jam, Pembayaran : Tunai dan Non Tunai, Parkir : Gratis, Harga Permalam : Rp279,902.00, Bintang : Bintang 3, Alamat : Jl. Candi Panggung No.2, Kelurahan :  Mojolangu, Kecamatan : Lowokwaru, Kota :  Malang, Provinsi :  Jawa Timur, Kode Pos : 65142')
+            .openPopup();
+        var marker = L.marker([-7.9387851, 112.6241607]).addTo(map)
+            .bindPopup('Ibis Styles Malang, Kategori : Hotel, Fasilitas : Restoran, bar, kolam renang, pusat kebugaran, taman bermain., Rating Gmaps : 4.4, Buka : 24 Jam, Pembayaran : Tunai dan Non Tunai, Parkir : Gratis, Harga Permalam : Rp491,405.00, Bintang : Bintang 3, Alamat : Jl. Letjend S. Parman No.45, Kelurahan :  Purwantoro, Kecamatan : Blimbing, Kota :  Malang, Provinsi :  Jawa Timur, Kode Pos : 65122')
+            .openPopup();
+        var marker = L.marker([-7.9658821, 112.6338726]).addTo(map)
+            .bindPopup('Maxone Ascent Hotel Malang, Kategori : Hotel, Fasilitas : Restoran, kolam renang 2 tingkat, bar, spa, antar jemput bandara., Rating Gmaps : 4.4, Buka : 24 Jam, Pembayaran : Tunai dan Non Tunai, Parkir : Gratis, Harga Permalam : Rp326,542.00, Bintang : Bintang 3, Alamat : Jl. Jaksa Agung Suprapto No.75 A, Kelurahan :  Rampal Celaket, Kecamatan : Klojen, Kota :  Malang, Provinsi :  Jawa Timur, Kode Pos : 65112')
+            .openPopup();
+        var marker = L.marker([-7.9677494, 112.6349956]).addTo(map)
+            .bindPopup('Morina Smart Hotel, Kategori : Hotel, Fasilitas : Bar, kolam renang, restoran, wifi., Rating Gmaps : 4.2, Buka : 24 Jam, Pembayaran : Tunai dan Non Tunai, Parkir : Gratis, Harga Permalam : Rp280,500.00, Bintang : Bintang 3, Alamat : Jl. Dr. Cipto No.5, Kelurahan :  Rampal Celaket, Kecamatan : Klojen, Kota :  Malang, Provinsi :  Jawa Timur, Kode Pos : 65111')
+            .openPopup();
+        var marker = L.marker([-7.9698290, 112.6327182]).addTo(map)
+            .bindPopup('Regents Park Hotel : alamat": "Jl. Jaksa Agung Suprapto No.12-16, Klojen, Kec. Klojen, Kota Malang, Jawa Timur 65111, Harga Permalam: Rp.354.375.00, Bintang: 3, Rating: 4.4')
+            .openPopup();
+        var marker = L.marker([-7.9555349, 112.6185215]).addTo(map)
+            .bindPopup('Swiss-Belinn Malang, Kategori : Hotel, Fasilitas : Restoran, bar, kolam renang, pusat kebugaran, spa, 5 ruang pertemuan., Rating Gmaps : 4.6, Buka : 24 Jam, Pembayaran : Tunai dan Non Tunai, Parkir : Gratis, Harga Permalam : Rp460,507.00, Bintang : Bintang 3, Alamat : Jl. Veteran No.8A, Kelurahan :  Penanggungan, Kecamatan : Klojen, Kota :  Malang, Provinsi :  Jawa Timur, Kode Pos : 65145')
+            .openPopup();
+        var marker = L.marker([-7.9661115, 112.6261276]).addTo(map)
+            .bindPopup('FrontOne Boutique B21, Kategori : Hotel, Fasilitas : Wifi, sarapan, parkir, ac , Rating Gmaps : 4.7, Buka : 24 Jam, Pembayaran : Tunai dan Non Tunai, Parkir : Gratis, Harga Permalam : Rp252,367.00, Bintang : Bintang 3, Alamat : Jl. Baluran No.21, Kelurahan :  Oro-oro Dowo, Kecamatan : Klojen, Kota :  Malang, Provinsi :  Jawa Timur, Kode Pos : 65119')
+            .openPopup();
+        var marker = L.marker([-7.9661142, 112.639234]).addTo(map)
+            .bindPopup('Urbanview Hotel De Kopen Malang, Kategori : Hotel, Fasilitas : ruang pertemuan dan acara, serta tempat parkir, Wi-Fi., Rating Gmaps : 4.1, Buka : 24 Jam, Pembayaran : Tunai dan Non Tunai, Parkir : Gratis, Harga Permalam : Rp191,520.00, Bintang : Bintang 3, Alamat : Jl. Tumenggung Suryo No.20, Kelurahan :  Bunulrejo, Kecamatan : Blimbing, Kota :  Malang, Provinsi :  Jawa Timur, Kode Pos : 65123')
+            .openPopup();
+        var marker = L.marker([-7.9661142, 112.639234]).addTo(map)
+            .bindPopup('The Grand Palace Hotel Malang, Kategori : Hotel, Fasilitas : sarapan dan parkir. Terdapat juga spa, restoran kelas atas, dan kedai kopi dengan musik live secara reguler., Rating Gmaps : 4.3, Buka : 24 Jam, Pembayaran : Tunai dan Non Tunai, Parkir : Gratis, Harga Permalam : Rp340,000.00, Bintang : Bintang 3, Alamat : Jl. Ade Irma Suryani No.23, Kelurahan :  Kasin, Kecamatan : Klojen, Kota :  Malang, Provinsi :  Jawa Timur, Kode Pos : 65117')
+            .openPopup();
+        var marker = L.marker([-7.968630229, 112.6363506]).addTo(map)
+            .bindPopup('Hotel Wilis Indah, Kategori : Hotel, Fasilitas : Wifi, restoran, parkiran, sarapan., Rating Gmaps : 4.4, Buka : 24 Jam, Pembayaran : Tunai dan Non Tunai, Parkir : Gratis, Harga Permalam : Rp231,819.00, Bintang : Bintang 3, Alamat : Jl. Dokter Wahidin No.40, Kelurahan :  Rampal Celaket, Kecamatan : Klojen, Kota :  Malang, Provinsi :  Jawa Timur, Kode Pos : 65111')
+            .openPopup();
+        var marker = L.marker([-7.971517119, 112.6288337]).addTo(map)
+            .bindPopup('Gets Hotel Malang, Kategori : Hotel, Fasilitas : Restoran, kedai kopi, kolam renang outdoor, dan tempat fitness., Rating Gmaps : 4.4, Buka : 24 Jam, Pembayaran : Tunai dan Non Tunai, Parkir : Gratis, Harga Permalam : Rp403,750.00, Bintang : Bintang 3, Alamat : Jl. Brigjend Slamet Riadi No.38, Kelurahan :  Oro-oro Dowo, Kecamatan : Klojen, Kota :  Malang, Provinsi :  Jawa Timur, Kode Pos : 65119')
+            .openPopup();
+        var marker = L.marker([-7.972510309, 112.63379]).addTo(map)
+            .bindPopup('Same Hotel, Kategori : Hotel, Fasilitas : Restoran 24 jam dan ruang pertemuan. Wi-Fi juga tersedia., Rating Gmaps : 4.3, Buka : 24 Jam, Pembayaran : Tunai dan Non Tunai, Parkir : Gratis, Harga Permalam : Rp305,025.00, Bintang : Bintang 3, Alamat : Jl. Patimura No.19, Kelurahan :  Klojen, Kecamatan : Klojen, Kota :  Malang, Provinsi :  Jawa Timur, Kode Pos : 65111')
+            .openPopup();
+        var marker = L.marker([-7.977102114, 112.6295905]).addTo(map)
+            .bindPopup('Grand Citihub Hotel @Kajoetangan, Kategori : Hotel, Fasilitas : Wifi, restoran, parkiran, sarapan, swalayan., Rating Gmaps : 4.1, Buka : 24 Jam, Pembayaran : Tunai dan Non Tunai, Parkir : Gratis, Harga Permalam : Rp418,320.00, Bintang : Bintang 3, Alamat : Jl. Jenderal Basuki Rahmat No.56, Kelurahan :  Kauman, Kecamatan : Klojen, Kota :  Malang, Provinsi :  Jawa Timur, Kode Pos : 65119')
+            .openPopup();
+        var marker = L.marker([-7.97890956, 112.6367089]).addTo(map)
+            .bindPopup('Morse Hotel, Kategori : Hotel, Fasilitas : Wifi, restoran, parkiran., Rating Gmaps : 4.3, Buka : 24 Jam, Pembayaran : Tunai dan Non Tunai, Parkir : Gratis, Harga Permalam : Rp160,650.00, Bintang : Bintang 3, Alamat : Jl. Trunojoyo No.02 Kav. 4, Kelurahan :  Kiduldalem, Kecamatan : Klojen, Kota :  Malang, Provinsi :  Jawa Timur, Kode Pos : 65119')
+            .openPopup();
+        var marker = L.marker([-7.981521106, 112.6348236]).addTo(map)
+            .bindPopup('The Aliante Hotel & Convention Center, Kategori : Hotel, Fasilitas : Kolam renang indoor dan outdoor, restoran, ruang olahraga, , Rating Gmaps : 4.2, Buka : 24 Jam, Pembayaran : Tunai dan Non Tunai, Parkir : Gratis, Harga Permalam : Rp595,000.00, Bintang : Bintang 3, Alamat : Jl. Aries Munandar No.41-45, Kelurahan :  Kiduldalem, Kecamatan : Klojen, Kota :  Malang, Provinsi :  Jawa Timur, Kode Pos : 65119')
+            .openPopup();
+        var marker = L.marker([-7.986006891, 112.6322926]).addTo(map)
+            .bindPopup('The Alimar Hotel Malang, Kategori : Hotel, Fasilitas : Restoran, wifi, bar, swalayan., Rating Gmaps : 4.2, Buka : 24 Jam, Pembayaran : Tunai dan Non Tunai, Parkir : Gratis, Harga Permalam : Rp612,850.00, Bintang : Bintang 3, Alamat : Jl. Pasar Besar No.58, Kelurahan :  Sukoharjo, Kecamatan : Klojen, Kota :  Malang, Provinsi :  Jawa Timur, Kode Pos : 65118')
+            .openPopup();
+        var marker = L.marker([-7.983602475, 112.6298068]).addTo(map)
+            .bindPopup('Hotel Pelangi Malang, Kategori : Hotel, Fasilitas : Restoran, kolam renang, kafe., Rating Gmaps : 4.3, Buka : 24 Jam, Pembayaran : Tunai dan Non Tunai, Parkir : Gratis, Harga Permalam : Rp321,192.00, Bintang : Bintang 3, Alamat : Jl. Merdeka Selatan No.3, Kelurahan :  Kauman, Kecamatan : Klojen, Kota :  Malang, Provinsi :  Jawa Timur, Kode Pos : 65119')
+            .openPopup();
+        var marker = L.marker([-7.984224749, 112.6325123]).addTo(map)
+            .bindPopup('Hotel Santosa, Kategori : Hotel, Fasilitas : Lounge, wifi, ruang makan., Rating Gmaps : 3.6, Buka : 24 Jam, Pembayaran : Tunai dan Non Tunai, Parkir : Gratis, Harga Permalam : Rp191,250.00, Bintang : Bintang 3, Alamat : Jl. Agus Salim No.24, Kelurahan :  Sukoharjo, Kecamatan : Klojen, Kota :  Malang, Provinsi :  Jawa Timur, Kode Pos : 65119')
+            .openPopup();
+        var marker = L.marker([-7.931989848, 112.6067296]).addTo(map)
+            .bindPopup('Padi Heritage Hotel, Kategori : Hotel, Fasilitas : Kolam renang, kafe, mushola., Rating Gmaps : 4.3, Buka : 24 Jam, Pembayaran : Tunai dan Non Tunai, Parkir : Gratis, Harga Permalam : Rp235,505.00, Bintang : Bintang 3, Alamat : Jl. Regulus No.9, Kelurahan :  Tlogomas, Kecamatan : Lowokwaru, Kota :  Malang, Provinsi :  Jawa Timur, Kode Pos : 65144')
+            .openPopup();
+        var marker = L.marker([-7.949447941, 112.6166383]).addTo(map)
+            .bindPopup('Everyday Smart Hotel, Kategori : Hotel, Fasilitas : Restoran, kolam renang, gym, kedai kopi., Rating Gmaps : 4, Buka : 24 Jam, Pembayaran : Tunai dan Non Tunai, Parkir : Gratis, Harga Permalam : Rp277,500.00, Bintang : Bintang 3, Alamat : Jl. Soekarno Hatta No.2, Kelurahan :  Jatimulyo, Kecamatan : Lowokwaru, Kota :  Malang, Provinsi :  Jawa Timur, Kode Pos : 65141')
+            .openPopup();
+        var marker = L.marker([-7.958258726, 112.6110131]).addTo(map)
+            .bindPopup('Sans Hotel Fif Fa Premiere Malang, Kategori : Hotel, Fasilitas : Wifi, restoran, parkir., Rating Gmaps : 3.7, Buka : 24 Jam, Pembayaran : Tunai dan Non Tunai, Parkir : Gratis, Harga Permalam : Rp199,164.00, Bintang : Bintang 3, Alamat : Jl. Sigura - Gura No.8, Kelurahan :  Sumbersari, Kecamatan : Lowokwaru, Kota :  Malang, Provinsi :  Jawa Timur, Kode Pos : 65149')
+            .openPopup();
+        var marker = L.marker([-7.960763384, 112.6364282]).addTo(map)
+            .bindPopup('Amaris Hotel Malang, Kategori : Hotel, Fasilitas : Kolam renang, restoran, wifi., Rating Gmaps : 4.2, Buka : 24 Jam, Pembayaran : Tunai dan Non Tunai, Parkir : Gratis, Harga Permalam : Rp365,554.00, Bintang : Bintang 2, Alamat : Jl. Letjen Sutoyo No.39, Kelurahan :  Lowokwaru, Kecamatan : Lowokwaru, Kota :  Malang, Provinsi :  Jawa Timur, Kode Pos : 65141')
+            .openPopup();
+        var marker = L.marker([-7.936717524, 112.6257034]).addTo(map)
+            .bindPopup('FrontOne Budget Malang by Azana, Kategori : Hotel, Fasilitas : Wifi, sarapan, parkir., Rating Gmaps : 4.4, Buka : 24 Jam, Pembayaran : Tunai dan Non Tunai, Parkir : Gratis, Harga Permalam : Rp301,663.00, Bintang : Bintang 2, Alamat : Jl. Puncak Borobudur No.B22, Kelurahan :  Mojolangu, Kecamatan : Lowokwaru, Kota :  Malang, Provinsi :  Jawa Timur, Kode Pos : 65142')
+            .openPopup();
+        var marker = L.marker([-7.97320299, 112.6346908]).addTo(map)
+            .bindPopup('Helios Hotel, Kategori : Hotel, Fasilitas : Restoran/bar rooftop penuh warna dan taman dengan kolam koi, area parkir tersedia gratis, Rating Gmaps : 4, Buka : 24 Jam, Pembayaran : Tunai dan Non Tunai, Parkir : Gratis, Harga Permalam : Rp252,875.00, Bintang : Bintang 2, Alamat : Jl. Patimura No.37, Kelurahan :  Klojen, Kecamatan : Klojen, Kota :  Malang, Provinsi :  Jawa Timur, Kode Pos : 65111')
+            .openPopup();
+        var marker = L.marker([-7.973465741, 112.6345557]).addTo(map)
+            .bindPopup('Shelter Hostel Malang, Kategori : Hotel, Fasilitas : kafe pedesaan, perpustakaan, dan peminjaman sepeda, pemesanan tur tersedia., Rating Gmaps : 4.9, Buka : 24 Jam, Pembayaran : Tunai dan Non Tunai, Parkir : Gratis, Harga Permalam : Rp189,000.00, Bintang : Bintang 2, Alamat : Jl. Suropati No.27, Kelurahan :  Klojen, Kecamatan : Klojen, Kota :  Malang, Provinsi :  Jawa Timur, Kode Pos : 65119')
+            .openPopup();
+        var marker = L.marker([-7.96900292, 112.6312637]).addTo(map)
+            .bindPopup('Hotel Palem 1 Syariah RedPartner, Kategori : Hotel, Fasilitas : Parkiran. TV., Rating Gmaps : 4.3, Buka : 24 Jam, Pembayaran : Tunai dan Non Tunai, Parkir : Gratis, Harga Permalam : Rp120,042.00, Bintang : Bintang 2, Alamat : Jl. Hasanuddin No.10, Kelurahan :  Samaan, Kecamatan : Klojen, Kota :  Malang, Provinsi :  Jawa Timur, Kode Pos : 65112')
+            .openPopup();
+        var marker = L.marker([-7.977593642, 112.6195424]).addTo(map)
+            .bindPopup('DParagon Ijen Nirwana Malang, alamat" : Jl. Bareng Lambau No.883,  Bareng, Kec. Klojen, Kota  Malang,  Jawa Timur 65116, Harga Permalam: Rp.148.552.00, Bintang: 2, Rating: 4.4')
+            .openPopup();
+        var marker = L.marker([-7.974547396, 112.6556206]).addTo(map)
+            .bindPopup('Sans Hotel La Vida Malang, Kategori : Hotel, Fasilitas : Wifi, sarapan, antar jemput, Rating Gmaps : 4.8, Buka : 24 Jam, Pembayaran : Tunai dan Non Tunai, Parkir : Gratis, Harga Permalam : Rp144,000.00, Bintang : Bintang 2, Alamat : Jl. Raya Sawojajar Ruko Wow  blok NY 1 , Kelurahan :  Sawojajar, Kecamatan : KedungKandang, Kota :  Malang, Provinsi :  Jawa Timur, Kode Pos : 65139')
+            .openPopup();
+        var marker = L.marker([-7.994330556, 112.6800647]).addTo(map)
+            .bindPopup('Condro Wulan Hostel, Kategori : Hotel, Fasilitas : Wifi, sarapan, restoran., Rating Gmaps : 4.9, Buka : 24 Jam, Pembayaran : Tunai dan Non Tunai, Parkir : Gratis, Harga Permalam : Rp179,000.00, Bintang : Bintang 2, Alamat : Jl. Band. Palmerah No.L 37 B, Kelurahan :  Cemorokandang, Kecamatan : KedungKandang, Kota :  Malang, Provinsi :  Jawa Timur, Kode Pos : 65138')
+            .openPopup();
+        var marker = L.marker([-7.980049947, 112.6538799]).addTo(map)
+            .bindPopup('Sawojajar Inn, Kategori : Hotel, Fasilitas : Wifi, Rating Gmaps : 3.9, Buka : 24 Jam, Pembayaran : Tunai dan Non Tunai, Parkir : Gratis, Harga Permalam : Rp197,000.00, Bintang : Bintang 1, Alamat : Jl. Raya Sawojajar No.14A, Kelurahan :  Sawojajar, Kecamatan : Kedung Kandang, Kota :  Malang, Provinsi :  Jawa Timur, Kode Pos : 65139')
+        var marker = L.marker([-8.010149, 112.654682]).addTo(map)
+            .bindPopup('Indomaret Citra Garden, Kategori : Indomaret, Fasilitas : Toilet, Debit, Gudang, Tempat duduk, Point Coffee, Rating Gmaps : 4.6, Buka : Tidak, Pembayaran : Tunai dan Non Tunai, Parkir : Gratis, Harga Permalam : Tidak Ada, Bintang : Tidak Ada, Alamat : Jl. Buring, Kelurahan : Buring, Kecamatan : Kedungkandang, Kota : Malang, Provinsi : Jawa Timur, Kode Pos : 65136')
+            .openPopup();
+        var marker = L.marker([-7.982004, 112.651933]).addTo(map)
+            .bindPopup('Indomaret Lesanpuro, Kategori : Indomaret, Fasilitas : Toilet, Debit, Gudang, Tempat duduk, Rating Gmaps : 4.2, Buka : Tidak, Pembayaran : Tunai dan Non Tunai, Parkir : Gratis, Harga Permalam : Tidak Ada, Bintang : Tidak Ada, Alamat : Jl. Dirgantara, Kelurahan : Lesanpuro, Kecamatan : Kedungkandang, Kota : Malang, Provinsi : Jawa Timur, Kode Pos : 65139')
+            .openPopup();
+        var marker = L.marker([-8.032127, 112.630974]).addTo(map)
+            .bindPopup('Indomaret Raya Wonorejo 84 Malang, Kategori : Indomaret, Fasilitas : Toilet, Debit, Gudang, Tempat duduk, Point Coffee, Rating Gmaps : 4.8, Buka : Tidak, Pembayaran : Tunai dan Non Tunai, Parkir : Gratis, Harga Permalam : Tidak Ada, Bintang : Tidak Ada, Alamat : Jl. Raya Wonorejo No.87, Kelurahan : Arjowinangun, Kecamatan : Kedungkandang, Kota : Malang, Provinsi : Jawa Timur, Kode Pos : 65132')
+            .openPopup();
+        var marker = L.marker([-7.976709, 112.664846]).addTo(map)
+            .bindPopup('Indomaret Sentani Utara, Kategori : Indomaret, Fasilitas : Toilet, Debit, Gudang, Tempat duduk, Rating Gmaps : 4.1, Buka : 24 Jam, Pembayaran : Tunai dan Non Tunai, Parkir : Gratis, Harga Permalam : Tidak Ada, Bintang : Tidak Ada, Alamat : Jl. Danau Sentani Raya, Kelurahan : Madyopuro, Kecamatan : Kedungkandang, Kota : Malang, Provinsi : Jawa Timur, Kode Pos : 651388')
+            .openPopup();
+        var marker = L.marker([-7.975828, 112.62941]).addTo(map)
+            .bindPopup('Indomaret Basuki Rahmat, Kategori : Indomaret, Fasilitas : Toilet, Debit, Gudang, Tempat duduk, Rating Gmaps : 4.5, Buka : 24 Jam, Pembayaran : Tunai dan Non Tunai, Parkir : Bayar, Harga Permalam : Tidak Ada, Bintang : Tidak Ada, Alamat : Jl. Jenderal Basuki Rahmat No.95A, Kelurahan : Klojen, Kecamatan : Klojen, Kota : Malang, Provinsi : Jawa Timur, Kode Pos : 65112')
+            .openPopup();
+        var marker = L.marker([-7.98583, 112.65628]).addTo(map)
+            .bindPopup('Indomaret Kiageng Gribig Selatan, Kategori : Indomaret, Fasilitas : Toilet, Debit, Gudang, Tempat duduk, Rating Gmaps : 3.9, Buka : Tidak, Pembayaran : Tunai dan Non Tunai, Parkir : Bayar, Harga Permalam : Tidak Ada, Bintang : Tidak Ada, Alamat : Jl. Ki Ageng Gribig, Kelurahan : Lesanpuro, Kecamatan : Kedungkandang, Kota : Malang, Provinsi : Jawa Timur, Kode Pos : 65138')
+            .openPopup();
+        var marker = L.marker([-8.018697, 112.643802]).addTo(map)
+            .bindPopup('Indomaret Fresh Mayjend Sungkono 99, Kategori : Indomaret, Fasilitas : Toilet, Debit, Gudang, Tempat duduk, Rating Gmaps : 4.2, Buka : 24 Jam, Pembayaran : Tunai dan Non Tunai, Parkir : Gratis, Harga Permalam : Tidak Ada, Bintang : Tidak Ada, Alamat : Jl. Mayjen Sungkono No.99, Kelurahan : wonokoyo, Kecamatan : Kedungkandang, Kota : Malang, Provinsi : Jawa Timur, Kode Pos : 65135')
+            .openPopup();
+        var marker = L.marker([-7.987552, 112.625482]).addTo(map)
+            .bindPopup('Indomaret Fresh Nusakambangan, Kategori : Indomaret, Fasilitas : Toilet, Debit, Gudang, Tempat duduk, Rating Gmaps : 4.2, Buka : 24 Jam, Pembayaran : Tunai dan Non Tunai, Parkir : Gratis, Harga Permalam : Tidak Ada, Bintang : Tidak Ada, Alamat : Jl. Nusakambangan, Kelurahan : Kasin, Kecamatan : Klojen, Kota : Malang, Provinsi : Jawa Timur, Kode Pos : 65117')
+            .openPopup();
+        var marker = L.marker([-7.970452, 112.616856]).addTo(map)
+            .bindPopup('Indomaret Simpang Wilis, Kategori : Indomaret, Fasilitas : Toilet, Debit, Gudang, Tempat duduk, Rating Gmaps : 4.1, Buka : Tidak, Pembayaran : Tunai dan Non Tunai, Parkir : Gratis, Harga Permalam : Tidak Ada, Bintang : Tidak Ada, Alamat : Jl. Simpang Wilis Indah No.19, Kelurahan : Gading Kasri, Kecamatan : Klojen, Kota : Malang, Provinsi : Jawa Timur, Kode Pos : 65115')
+            .openPopup();
+        var marker = L.marker([-7.965084, 112.624709]).addTo(map)
+            .bindPopup('Indomaret Ijen 77B Simpang Balapan, Kategori : Indomaret, Fasilitas : Toilet, Debit, Gudang, Tempat duduk, Point Coffee, Rating Gmaps : 3.2, Buka : 24 Jam, Pembayaran : Tunai dan Non Tunai, Parkir : Gratis, Harga Permalam : Tidak Ada, Bintang : Tidak Ada, Alamat : Jl. Besar Ijen No.79 Oro-oro Dowo, Kelurahan : Klojen, Kecamatan : Klojen, Kota : Malang, Provinsi : Jawa Timur, Kode Pos : 65119')
+            .openPopup();
+        var marker = L.marker([-7.956974,112.623083]).addTo(map)
+            .bindPopup('Indomaret Mayjend Panjaitan, Kategori : Indomaret, Fasilitas : Toilet, Debit, Gudang, Tempat duduk, Rating Gmaps : 4.5, Buka : Tidak, Pembayaran : Tunai dan Non Tunai, Parkir : Bayar, Harga Permalam : Tidak Ada, Bintang : Tidak Ada, Alamat : Jl. Mayjend Panjaitan Penanggungan, Kelurahan : Klojen, Kecamatan : Klojen, Kota : Malang, Provinsi : Jawa Timur, Kode Pos : 65113')
+            .openPopup();
+        var marker = L.marker([-7.955068,112.59555]).addTo(map)
+            .bindPopup('Indomaret Karang Widoro, Kategori : Indomaret, Fasilitas : Toilet, Debit, Gudang, Tempat duduk, Point Coffee, Rating Gmaps : 4.5, Buka : Tidak, Pembayaran : Tunai dan Non Tunai, Parkir : Gratis, Harga Permalam : Tidak Ada, Bintang : Tidak Ada, Alamat : Jl. Karang Ampel Timur, Kelurahan : Karangbesuki, Kecamatan : Sukun, Kota : Malang, Provinsi : Jawa Timur, Kode Pos : 65149')
+            .openPopup();
+        var marker = L.marker([-8.003866,112.618251]).addTo(map)
+            .bindPopup('Indomaret Fresh Supriyadi, Kategori : Indomaret, Fasilitas : Toilet, Debit, Gudang, Tempat duduk, Rating Gmaps : 4.2, Buka : 24 Jam, Pembayaran : Tunai dan Non Tunai, Parkir : Bayar, Harga Permalam : Tidak Ada, Bintang : Tidak Ada, Alamat : Jl. Bandungrejosari, Kelurahan : Bandungrejosari, Kecamatan : Sukun, Kota : Malang, Provinsi : Jawa Timur, Kode Pos : 65148')
+            .openPopup();
+        var marker = L.marker([-8.007225,112.629997]).addTo(map)
+            .bindPopup('Indomaret Gadang 2, Kategori : Indomaret, Fasilitas : Toilet, Debit, Gudang, Tempat duduk, Point Coffee, Rating Gmaps : 3.4, Buka : 24 Jam, Pembayaran : Tunai dan Non Tunai, Parkir : Gratis, Harga Permalam : Tidak Ada, Bintang : Tidak Ada, Alamat : Jl. Kolonel Sugiono No.2, Kelurahan : Gadang, Kecamatan : Sukun, Kota : Malang, Provinsi : Jawa Timur, Kode Pos : 65149')
+            .openPopup();
+        var marker = L.marker([-7.985609,112.602205]).addTo(map)
+            .bindPopup('Indomaret Mulyorejo, Kategori : Indomaret, Fasilitas : Toilet, Debit, Gudang, Tempat duduk, Point Coffee, Rating Gmaps : 3.9, Buka : 24 Jam, Pembayaran : Tunai dan Non Tunai, Parkir : Bayar, Harga Permalam : Tidak Ada, Bintang : Tidak Ada, Alamat : Jl. Tebo Utara No.7, Kelurahan : Mulyorejo, Kecamatan : Sukun, Kota : Malang, Provinsi : Jawa Timur, Kode Pos : 65147')
+            .openPopup();
+        var marker = L.marker([-7.990258,112.617869]).addTo(map)
+            .bindPopup('Indomaret Mergan, Kategori : Indomaret, Fasilitas : Toilet, Debit, Gudang, Tempat duduk, Rating Gmaps : 4.3, Buka : 24 Jam, Pembayaran : Tunai dan Non Tunai, Parkir : Bayar, Harga Permalam : Tidak Ada, Bintang : Tidak Ada, Alamat : Jl. Larwo E No.16, Kelurahan : Mergan, Kecamatan : Sukun, Kota : Malang, Provinsi : Jawa Timur, Kode Pos : 65147')
+            .openPopup();
+        var marker = L.marker([-7.936642,112.605794]).addTo(map)
+            .bindPopup('Indomaret MT Haryono 1, Kategori : Indomaret, Fasilitas : Toilet, Debit, Gudang, Tempat duduk, Point Coffee, Rating Gmaps : 3.4, Buka : 24 Jam, Pembayaran : Tunai dan Non Tunai, Parkir : Bayar, Harga Permalam : Tidak Ada, Bintang : Tidak Ada, Alamat : Jl. Mayjen Hariyono Jl. MT. Haryono No.60 - 65, Kelurahan : Dinoyo, Kecamatan : Lowokwaru, Kota : Malang, Provinsi : Jawa Timur, Kode Pos : 65144')
+            .openPopup();
+        var marker = L.marker([-7.940084,112.624637]).addTo(map)
+            .bindPopup('Indomaret Soekarno Hatta 1, Kategori : Indomaret, Fasilitas : Toilet, Debit, Gudang, Tempat duduk, Rating Gmaps : 4.4, Buka : 24 Jam, Pembayaran : Tunai dan Non Tunai, Parkir : Gratis, Harga Permalam : Tidak Ada, Bintang : Tidak Ada, Alamat : Jl. Soekarno Hatta 1 Jl. Suhat Malang Blok D No.402-403, Kelurahan : Mojolangu, Kecamatan : Lowokwaru, Kota : Malang, Provinsi : Jawa Timur, Kode Pos : 65142')
+            .openPopup();
+        var marker = L.marker([-7.955042,112.631996]).addTo(map)
+            .bindPopup('Indomaret Bungur, Kategori : Indomaret, Fasilitas : Toilet, Debit, Gudang, Tempat duduk, Point Coffee, Rating Gmaps : 4.1, Buka : 24 Jam, Pembayaran : Tunai dan Non Tunai, Parkir : Gratis, Harga Permalam : Tidak Ada, Bintang : Tidak Ada, Alamat : Jl. Bungur, Lowokwaru, Kelurahan : Bungur, Kecamatan : Lowokwaru, Kota : Malang, Provinsi : Jawa Timur, Kode Pos : 65141')
+            .openPopup();
+        var marker = L.marker([-7.957882,112.610299]).addTo(map)
+            .bindPopup('Indomaret Sigura-Gura 15A, Kategori : Indomaret, Fasilitas : Toilet, Debit, Gudang, Tempat duduk, Point Coffee, Rating Gmaps : 1.7, Buka : 24 Jam, Pembayaran : Tunai dan Non Tunai, Parkir : Bayar, Harga Permalam : Tidak Ada, Bintang : Tidak Ada, Alamat : Jl. Sigura - Gura No.15a, Kelurahan : Sumbersari, Kecamatan : Lowokwaru, Kota : Malang, Provinsi : Jawa Timur, Kode Pos : 65145')
+            .openPopup();
+        var marker = L.marker([-7.945423,112.609703]).addTo(map)
+            .bindPopup('Indomaret Gajayana, Kategori : Indomaret, Fasilitas : Toilet, Debit, Gudang, Tempat duduk, Rating Gmaps : 3.4, Buka : Tidak, Pembayaran : Tunai dan Non Tunai, Parkir : Gratis, Harga Permalam : Tidak Ada, Bintang : Tidak Ada, Alamat : Jl. Gajayana No.572 A, Kelurahan : Dinoyo, Kecamatan : Lowokwaru, Kota : Malang, Provinsi : Jawa Timur, Kode Pos : 65144')
+            .openPopup();
+        var marker = L.marker([-7.926675,112.650171]).addTo(map)
+            .bindPopup('Indomaret Balearjosari, Kategori : Indomaret, Fasilitas : Toilet, Debit, Gudang, Tempat duduk, Point Coffee, Rating Gmaps : 5, Buka : Tidak, Pembayaran : Tunai dan Non Tunai, Parkir : Gratis, Harga Permalam : Tidak Ada, Bintang : Tidak Ada, Alamat : Jl. Ahmad Yani No.39, Kelurahan : Polowijen, Kecamatan : Blimbing, Kota : Malang, Provinsi : Jawa Timur, Kode Pos : 65126')
+            .openPopup();
+        var marker = L.marker([-7.940806,112.661318]).addTo(map)
+            .bindPopup('Indomaret Perum Pondok Blimbing Indah, Kategori : Indomaret, Fasilitas : Toilet, Debit, Gudang, Tempat duduk, Point Coffee, Rating Gmaps : 3.5, Buka : Tidak, Pembayaran : Tunai dan Non Tunai, Parkir : Bayar, Harga Permalam : Tidak Ada, Bintang : Tidak Ada, Alamat : Jl. Perum Pondok Blimbing Indah Ruko A2-A3, Kelurahan : Arjosari, Kecamatan : Blimbing, Kota : Malang, Provinsi : Jawa Timur, Kode Pos : 65125')
+            .openPopup();
+        var marker = L.marker([-7.972084,112.645111]).addTo(map)
+            .bindPopup('Indomaret Hamid Rusdi, Kategori : Indomaret, Fasilitas : Toilet, Debit, Gudang, Tempat duduk, Rating Gmaps : 3.7, Buka : 24 Jam, Pembayaran : Tunai dan Non Tunai, Parkir : Gratis, Harga Permalam : Tidak Ada, Bintang : Tidak Ada, Alamat : Jl. Hamid Rusdi No.19, Kelurahan : Bunulrejo, Kecamatan : Blimbing, Kota : Malang, Provinsi : Jawa Timur, Kode Pos : 651266')
+            .openPopup();
+        var marker = L.marker([-7.957875,112.645338]).addTo(map)
+            .bindPopup('Indomaret Sulfat Barat, Kategori : Indomaret, Fasilitas : Toilet, Debit, Gudang, Tempat duduk, Point Coffee, Rating Gmaps : 4.4, Buka : 24 Jam, Pembayaran : Tunai dan Non Tunai, Parkir : Bayar, Harga Permalam : Tidak Ada, Bintang : Tidak Ada, Alamat : Jl. Sulfat No.20, Kelurahan : Purwantoro, Kecamatan : Blimbing, Kota : Malang, Provinsi : Jawa Timur, Kode Pos : 65122')
+            .openPopup();
+        var marker = L.marker([-7.958552,112.655733]).addTo(map)
+            .bindPopup('Indomaret Fresh Simpang Sulfat Utara, Kategori : Indomaret, Fasilitas : Toilet, Debit, Gudang, Tempat duduk, Point Coffee, Rating Gmaps : 4.4, Buka : 24 Jam, Pembayaran : Tunai dan Non Tunai, Parkir : Bayar, Harga Permalam : Tidak Ada, Bintang : Tidak Ada, Alamat : Jl. Simpang Sulfat Utara No.61, Kelurahan : Pandanwangi, Kecamatan : Blimbing, Kota : Malang, Provinsi : Jawa Timur, Kode Pos : 65126')
+            .openPopup();
+        var marker = L.marker([-8.038172,112.642564]).addTo(map)
+            .bindPopup('Alfamart Arjowinangun Malang, Kategori : Alfamart, Fasilitas : Coffee Beand, Tempat duduk, Toilet, Debit, Gudang, Rating Gmaps : 4.2, Buka : 24 Jam, Pembayaran : Tunai dan Non Tunai, Parkir : Gratis, Harga Permalam : Tidak Ada, Bintang : Tidak Ada, Alamat : Jl. Raya Sempalwadak No.52, Kelurahan : Arjowinangun, Kecamatan : Kedungkandang, Kota : Malang, Provinsi : Jawa Timur, Kode Pos : 65135')
+            .openPopup();
+        var marker = L.marker([-8.000751,112.648698]).addTo(map)
+            .bindPopup('Alfamart Malik Dalam, Kategori : Alfamart, Fasilitas : Toilet, Tempat duduk, Debit, Gudang, Rating Gmaps : 2.8, Buka : Tidak, Pembayaran : Tunai dan Non Tunai, Parkir : Bayar , Harga Permalam : Tidak Ada, Bintang : Tidak Ada, Alamat : Jl. KH. Malik Dalam, Jl. KH. Malik Dalam, Kelurahan : Buring, Kecamatan : Kedungkandang, Kota : Malang, Provinsi : Jawa Timur, Kode Pos : 65136')
+            .openPopup();
+        var marker = L.marker([-7.980698,112.666084]).addTo(map)
+            .bindPopup('Alfamart Ki Ageng Gribig, Kategori : Alfamart, Fasilitas : Toilet, Tempat duduk, Debit, Gudang, Rating Gmaps : 4.1, Buka : Tidak, Pembayaran : Tunai dan Non Tunai, Parkir : Gratis, Harga Permalam : Tidak Ada, Bintang : Tidak Ada, Alamat : Jl. Ki Ageng Gribig No.141, Kelurahan : Madyopuro, Kecamatan : Kedungkandang, Kota : Malang, Provinsi : Jawa Timur, Kode Pos : 65138')
+            .openPopup();
+        var marker = L.marker([-7.994016,112.635076]).addTo(map)
+            .bindPopup('Alfamart Kebalen Wetan, Kategori : Alfamart, Fasilitas : Toilet, Tempat duduk, Debit, Gudang, Rating Gmaps : 3.3, Buka : Tidak, Pembayaran : Tunai dan Non Tunai, Parkir : Bayar, Harga Permalam : Tidak Ada, Bintang : Tidak Ada, Alamat : Jl. Kebalen Wetan, Kelurahan : Kotalama, Kecamatan : Kedungkandang, Kota : Malang, Provinsi : Jawa Timur, Kode Pos : 65136')
+            .openPopup();
+        var marker = L.marker([-8.016289,112.634344]).addTo(map)
+            .bindPopup('Alfamart bumiayu, Kategori : Alfamart, Fasilitas : Debit, Gudang, Toilet, Rating Gmaps : 3.7, Buka : 24 Jam, Pembayaran : Tunai dan Non Tunai, Parkir : Gratis, Harga Permalam : Tidak Ada, Bintang : Tidak Ada, Alamat : Jl. Kyai Parseh Jaya No.136, Kelurahan : Bumiayu, Kecamatan : Kedungkandang, Kota : Malang, Provinsi : Jawa Timur, Kode Pos : 65135')
+            .openPopup();
+        var marker = L.marker([-7.983302,112.629131]).addTo(map)
+            .bindPopup('Alfamart Wahid Hasyim, Kategori : Alfamart, Fasilitas : Debit, Gudang, Toilet, Rating Gmaps : 3.1, Buka : 24 Jam, Pembayaran : Tunai dan Non Tunai, Parkir : Bayar, Harga Permalam : Tidak Ada, Bintang : Tidak Ada, Alamat : Jl. Kyai H. Wahid Hasyim No.4, Kelurahan : Kauman, Kecamatan : Klojen, Kota : Malang, Provinsi : Jawa Timur, Kode Pos : 65119')
+            .openPopup();
+        var marker = L.marker([-7.989162,112.638832]).addTo(map)
+            .bindPopup('Alfamart Kebalen Wetan 2, Kategori : Alfamart, Fasilitas : Debit, Gudang, Toilet, Rating Gmaps : 3.3, Buka : Tidak, Pembayaran : Tunai dan Non Tunai, Parkir : Gratis, Harga Permalam : Tidak Ada, Bintang : Tidak Ada, Alamat : Jl. Kebalen Wetan (340567), Kelurahan : Kotalama, Kecamatan : Kedungkandang, Kota : Malang, Provinsi : Jawa Timur, Kode Pos : 65136')
+            .openPopup();
+        var marker = L.marker([-7.967262,112.620436]).addTo(map)
+            .bindPopup('Alfamart Pahlawan Trip, Kategori : Alfamart, Fasilitas : Debit, Gudang, Toilet, Rating Gmaps : 3, Buka : Tidak, Pembayaran : Tunai dan Non Tunai, Parkir : Bayar, Harga Permalam : Tidak Ada, Bintang : Tidak Ada, Alamat : Jl. Pahlawan Trip Kel No.25, Kelurahan : Kauman, Kecamatan : Klojen, Kota : Malang, Provinsi : Jawa Timur, Kode Pos : 65119')
+            .openPopup();
+        var marker = L.marker([-7.96862,112.613552]).addTo(map)
+            .bindPopup('Alfamart Galunggung, Kategori : Alfamart, Fasilitas : Debit, Gudang, Toilet, Rating Gmaps : 4.2, Buka : 24 Jam, Pembayaran : Tunai dan Non Tunai, Parkir : Gratis, Harga Permalam : Tidak Ada, Bintang : Tidak Ada, Alamat : Jl. Galunggung No.45, Kelurahan : Gading Kasri, Kecamatan : Klojen, Kota : Malang, Provinsi : Jawa Timur, Kode Pos : 65115')
+        var marker = L.marker([-7.965824,112.633911]).addTo(map)
+            .bindPopup('Alfamart Jaksa Agung Suprapto, Kategori : Alfamart, Fasilitas : Toilet, Tempat duduk, Debit, Gudang, Rating Gmaps : 2.5, Buka : Tidak, Pembayaran : Tunai dan Non Tunai, Parkir : Gratis, Harga Permalam : Tidak Ada, Bintang : Tidak Ada, Alamat : Jl. Jaksa Agung Suprapto Kel No.75 A, Kelurahan : Samaan, Kecamatan : Klojen, Kota : Malang, Provinsi : Jawa Timur, Kode Pos : 65112')
+            .openPopup();
+        var marker = L.marker([-7.988517,112.632219]).addTo(map)
+            .bindPopup('Alfamart Prof. Moch Yamin, Kategori : Alfamart, Fasilitas : Toilet, Tempat duduk, Debit, Gudang, Rating Gmaps : 3.3, Buka : Tidak, Pembayaran : Tunai dan Non Tunai, Parkir : Gratis, Harga Permalam : Tidak Ada, Bintang : Tidak Ada, Alamat : Jl. Prof. Moch Yamin No.6-8, Kelurahan : Sukoharjo, Kecamatan : Klojen, Kota : Malang, Provinsi : Jawa Timur, Kode Pos : 65118')
+            .openPopup();
+        var marker = L.marker([-8.012837,112.621404]).addTo(map)
+            .bindPopup('Alfamart Raya Kepuh, Kategori : Alfamart, Fasilitas : Toilet, Tempat duduk, Debit, Gudang, Rating Gmaps : 3.5, Buka : Tidak, Pembayaran : Tunai dan Non Tunai, Parkir : Gratis, Harga Permalam : Tidak Ada, Bintang : Tidak Ada, Alamat : Jl. Raya Kepuh No.33, Kelurahan : Bandungrejosari, Kecamatan : Sukun, Kota : Malang, Provinsi : Jawa Timur, Kode Pos : 65148')
+            .openPopup();
+        var marker = L.marker([-8.022787,112.628529]).addTo(map)
+            .bindPopup('Alfamidi Gadang, Kategori : Alfamidi, Fasilitas : Coffee Beand, Tempat duduk, Toilet, Debit, Gudang, Rating Gmaps : 3.8, Buka : 24 Jam, Pembayaran : Tunai dan Non Tunai, Parkir : Bayar, Harga Permalam : Tidak Ada, Bintang : Tidak Ada, Alamat : Jl. Raya Gadang, Kelurahan : Gadang, Kecamatan : Sukun, Kota : Malang, Provinsi : Jawa Timur, Kode Pos : 65148')
+            .openPopup();
+        var marker = L.marker([-8.007712,112.629775]).addTo(map)
+            .bindPopup('Alfamart Kolonel Sugiono, Kategori : Alfamart, Fasilitas : Coffee Beand, Tempat duduk, Toilet, Debit, Gudang, Rating Gmaps : 2.9, Buka : Tidak, Pembayaran : Tunai dan Non Tunai, Parkir : Gratis, Harga Permalam : Tidak Ada, Bintang : Tidak Ada, Alamat : Jl. Kolonel Sugiono Kel No.101, Kelurahan : Gadang, Kecamatan : Sukun, Kota : Malang, Provinsi : Jawa Timur, Kode Pos : 65149')
+            .openPopup();
+        var marker = L.marker([-7.955973,112.606455]).addTo(map)
+            .bindPopup('Alfamart Bend. Sigura-Gura Barat, Kategori : Alfamart, Fasilitas : Toilet, Tempat duduk, Debit, Gudang, Rating Gmaps : 3.8, Buka : Tidak, Pembayaran : Tunai dan Non Tunai, Parkir : Gratis, Harga Permalam : Tidak Ada, Bintang : Tidak Ada, Alamat : Jl. Bend. Sigura-Gura Barat No.Kav 2, Kelurahan : Karangbesuki, Kecamatan : Sukun, Kota : Malang, Provinsi : Jawa Timur, Kode Pos : 65146')
+            .openPopup();
+        var marker = L.marker([-7.964384,112.603145]).addTo(map)
+            .bindPopup('Alfamart Puncak Mandala, Kategori : Alfamart, Fasilitas : Toilet, Tempat duduk, Debit, Gudang, Rating Gmaps : 3.6, Buka : Tidak, Pembayaran : Tunai dan Non Tunai, Parkir : Bayar, Harga Permalam : Tidak Ada, Bintang : Tidak Ada, Alamat : Jl Puncak Mandala A3-573812, Kelurahan : Pisang Candi, Kecamatan : Sukun, Kota : Malang, Provinsi : Jawa Timur, Kode Pos : 65146')
+            .openPopup();
+        var marker = L.marker([-7.938437,112.579191]).addTo(map)
+            .bindPopup('Alfamart Raya Genting, Kategori : Alfamart, Fasilitas : Toilet, Tempat duduk, Debit, Gudang, Rating Gmaps : 3.8, Buka : 24 Jam, Pembayaran : Tunai dan Non Tunai, Parkir : Gratis, Harga Permalam : Tidak Ada, Bintang : Tidak Ada, Alamat : Jl. Raya Genting, RT.03/RW.07, Kelurahan : Merjosari, Kecamatan : Lowokwaru, Kota : Malang, Provinsi : Jawa Timur, Kode Pos : 65144')
+            .openPopup();
+        var marker = L.marker([-7.937974,112.637886]).addTo(map)
+            .bindPopup('Alfamart Simpang Borobudur, Kategori : Alfamart, Fasilitas : Debit, Gudang, Toilet, Rating Gmaps : 4, Buka : 24 Jam, Pembayaran : Tunai dan Non Tunai, Parkir : Gratis, Harga Permalam : Tidak Ada, Bintang : Tidak Ada, Alamat : Jl. Simpang Borobudur(404988), Kelurahan : Mojolangu, Kecamatan : Lowokwaru, Kota : Malang, Provinsi : Jawa Timur, Kode Pos : 65142')
+            .openPopup();
+        var marker = L.marker([-7.94602,112.608334]).addTo(map)
+            .bindPopup('Alfamart Simpang Gajayana, Kategori : Alfamart, Fasilitas : Debit, Gudang, Toilet, Rating Gmaps : 4.2, Buka : Tidak, Pembayaran : Tunai dan Non Tunai, Parkir : Gratis, Harga Permalam : Tidak Ada, Bintang : Tidak Ada, Alamat : Jl. Simpang Gajayana No.611, Kelurahan : Dinoyo, Kecamatan : Lowokwaru, Kota : Malang, Provinsi : Jawa Timur, Kode Pos : 65144')
+            .openPopup();
+        var marker = L.marker([-7.936377,112.625719]).addTo(map)
+            .bindPopup('Alfamart Puncak Borobudur B12-B15, Kategori : Alfamart, Fasilitas : Coffee Beand, Tempat duduk, Toilet, Debit, Gudang, Rating Gmaps : 3, Buka : Tidak, Pembayaran : Tunai dan Non Tunai, Parkir : Bayar, Harga Permalam : Tidak Ada, Bintang : Tidak Ada, Alamat : Jl. Puncak Borobudur B12-B15, Kelurahan : Mojolangu, Kecamatan : Lowokwaru, Kota : Malang, Provinsi : Jawa Timur, Kode Pos : 65142')
+            .openPopup();
+        var marker = L.marker([-7.936133,112.61836]).addTo(map)
+            .bindPopup('Alfamart Candi Panggung, Kategori : Alfamart, Fasilitas : Coffee Beand, Tempat duduk, Toilet, Debit, Gudang, Rating Gmaps : 3.6, Buka : 24 Jam, Pembayaran : Tunai dan Non Tunai, Parkir : Gratis, Harga Permalam : Tidak Ada, Bintang : Tidak Ada, Alamat : Jl. Candi Panggung 3(490039), Kelurahan : Mojolangu, Kecamatan : Lowokwaru, Kota : Malang, Provinsi : Jawa Timur, Kode Pos : 65142')
+            .openPopup();
+        var marker = L.marker([-7.933931,112.661359]).addTo(map)
+            .bindPopup('Alfamart Teluk Pacitan, Kategori : Alfamart, Fasilitas : Debit, Gudang, Toilet, Rating Gmaps : 3.4, Buka : Tidak, Pembayaran : Tunai dan Non Tunai, Parkir : Gratis, Harga Permalam : Tidak Ada, Bintang : Tidak Ada, Alamat : Jl. Teluk Pacitan No.11-3, Kelurahan : Arjosari, Kecamatan : Blimbing, Kota : Malang, Provinsi : Jawa Timur, Kode Pos : 65126')
+            .openPopup();
+        var marker = L.marker([-7.978709,112.6494]).
+        addTo(map)
+            .bindPopup('Alfamart Mayjen M. Wiyono, Kategori : Alfamart, Fasilitas : Debit, Gudang, Toilet, Rating Gmaps : 4.1, Buka : 24 Jam, Pembayaran : Tunai dan Non Tunai, Parkir : Gratis, Harga Permalam : Tidak Ada, Bintang : Tidak Ada, Alamat : Jl. Mayjen.M.Wiyono, Kelurahan : Polehan, Kecamatan : Blimbing, Kota : Malang, Provinsi : Jawa Timur, Kode Pos : 65121')
+            .openPopup();
+        var marker = L.marker([-7.958997,112.655541]).
+        addTo(map)
+            .bindPopup('Alfamart Simpang Sulfat, Kategori : Alfamart, Fasilitas : Debit, Gudang, Toilet, Rating Gmaps : 4.1, Buka : 24 Jam, Pembayaran : Tunai dan Non Tunai, Parkir : Bayar, Harga Permalam : Tidak Ada, Bintang : Tidak Ada, Alamat : Jl. Simpang Sulfat Utara, Kelurahan : Pandanwangi, Kecamatan : Blimbing, Kota : Malang, Provinsi : Jawa Timur, Kode Pos : 65124')
+            .openPopup();
+         var marker = L.marker([-7.943465,112.648914]).
+        addTo(map)
+            .bindPopup('Alfamart Laksda Adi Sucipto, Kategori : Alfamart, Fasilitas : Coffee Beand, Tempat duduk, Toilet, Debit, Gudang, Rating Gmaps : 3.9, Buka : 24 Jam, Pembayaran : Tunai dan Non Tunai, Parkir : Bayar, Harga Permalam : Tidak Ada, Bintang : Tidak Ada, Alamat : Jl. Laksda Adi Sucipto No.165, Kelurahan : Blimbing, Kecamatan : Blimbing, Kota : Malang, Provinsi : Jawa Timur, Kode Pos : 65125')
+            .openPopup();
+        var marker = L.marker([-7.952861,112.646078]).
+        addTo(map)
+            .bindPopup('Alfamart Sunandar Priyo Sudarmo, Kategori : Alfamart, Fasilitas : Coffee Beand, Tempat duduk, Toilet, Debit, Gudang, Rating Gmaps : 3.2, Buka : Tidak, Pembayaran : Tunai dan Non Tunai, Parkir : Gratis, Harga Permalam : Tidak Ada, Bintang : Tidak Ada, Alamat : Jl. Sunandar Priyo Sudarmo Sudarmo Kav.B No.C.D, Kelurahan : Purwantoro, Kecamatan : Blimbing, Kota : Malang, Provinsi : Jawa Timur, Kode Pos : 65122')
+
+        var circle = L.circle([-7.982433877065588,112.63087567291318], {
+    color: 'red',
+    fillColor: '#f03',
+    fillOpacity: 0.5,
+    radius: 3000
+}).addTo(map);
+   
+        var polygon = L.polygon([
+    [-7.938437,112.579191],
+    [-7.9266257, 112.6025822],
+    [-7.9260617, 112.6451968],
+    [-7.926675,112.650171],
+    [-7.933931,112.661359],
+    [-7.979848576,112.6833837],
+    [-7.994330556, 112.6800647],
+    [-8.02895, 112.649352],
+    [-8.038172,112.642564],
+    [-8.032127, 112.630974],
+    [-7.985609,112.602205], 
+],{
+    color: 'grey',
+    fillOpacity: 0.5,
+}) .addTo(map);
+    </script>
+</body>
+</html> 
